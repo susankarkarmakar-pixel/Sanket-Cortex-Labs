@@ -68,7 +68,10 @@ export function Sidebar({ isOpen, onClose, selectedModel, onSelectModel }: Sideb
 
         {/* Footer */}
         <div className="p-4 border-t border-brand-gray/30">
-          <button className="flex items-center gap-2 text-brand-white/80 hover:text-brand-white transition-colors p-2 rounded-lg hover:bg-brand-gray/50 w-full">
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent('open-settings'))}
+            className="flex items-center gap-2 text-brand-white/80 hover:text-brand-white transition-colors p-2 rounded-lg hover:bg-brand-gray/50 w-full"
+          >
             <Settings className="w-5 h-5" />
             <span>Settings</span>
           </button>
