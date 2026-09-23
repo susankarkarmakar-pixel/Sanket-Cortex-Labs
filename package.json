@@ -9,9 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.59",
+    "@ai-sdk/anthropic": "^4.0.60",
     "@ai-sdk/openai": "^4.0.72",
-    "ai": "^7.0.109",
+    "@ai-sdk/react": "^4.0.114",
+    "ai": "^7.0.111",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.47.0",

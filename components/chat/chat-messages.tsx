@@ -4,8 +4,10 @@ import { useEffect, useRef } from "react";
 import { Brain } from "lucide-react";
 import { MessageBubble } from "./message-bubble";
 
+// Use the built-in Message type or structure it explicitly to avoid ai sdk version issues
 export type Message = {
-  role: "user" | "assistant";
+  id?: string;
+  role: "user" | "assistant" | "system" | "data";
   content: string;
 };
 
@@ -43,12 +45,19 @@ export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
       <div className="max-w-4xl mx-auto flex flex-col w-full pb-4">
         {messages.map((msg, index) => (
           <MessageBubble
-            key={index}
-            role={msg.role}
+            key={msg.id || index}
+            role={msg.role as "user" | "assistant"}
             content={msg.content}
             isStreaming={isStreaming && index === messages.length - 1 && msg.role === "assistant"}
           />
         ))}
+        {isStreaming && messages[messages.length - 1]?.role === "user" && (
+          <MessageBubble
+            role="assistant"
+            content=""
+            isStreaming={true}
+          />
+        )}
       </div>
     </div>
   );

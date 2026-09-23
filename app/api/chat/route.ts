@@ -28,10 +28,13 @@ export async function POST(req: Request) {
       messages,
     });
 
-    // Use toDataStreamResponse() for ai sdk v7 if it exists, otherwise toTextStreamResponse or toDataStreamResponse equivalent
-    return "toDataStreamResponse" in result
-      ? (result.toDataStreamResponse as () => Response)()
-      : (result.toTextStreamResponse as () => Response)();
+    // Use toDataStreamResponse() or toTextStreamResponse depending on ai sdk v7
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyResult = result as any;
+    if (typeof anyResult.toDataStreamResponse === "function") {
+      return anyResult.toDataStreamResponse();
+    }
+    return anyResult.toTextStreamResponse();
   } catch (error: unknown) {
     console.error("API Chat Error:", error);
 
