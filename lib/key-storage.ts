@@ -26,6 +26,11 @@ export function saveKeys(keys: ApiKeys): void {
   const jsonString = JSON.stringify(cleanedKeys);
   const base64Encoded = btoa(jsonString);
   localStorage.setItem(STORAGE_KEY, base64Encoded);
+
+  // Dispatch custom event for UI updates
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event('keys-updated'));
+  }
 }
 
 export function getKeys(): ApiKeys {
@@ -51,4 +56,8 @@ export function hasKey(provider: keyof ApiKeys): boolean {
 export function clearKeys(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event('keys-updated'));
+  }
 }

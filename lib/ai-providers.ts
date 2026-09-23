@@ -10,6 +10,27 @@ export const PROVIDER_DISPLAY_NAMES: Record<ModelProvider, string> = {
   huggingface: "Hugging Face (Hermes)",
 };
 
+export const MODELS_METADATA: Record<ModelProvider, { name: string; description: string; color: string; icon: string }> = {
+  deepseek: {
+    name: "DeepSeek Chat",
+    description: "Fast and efficient reasoning model",
+    color: "text-blue-400",
+    icon: "🧠",
+  },
+  anthropic: {
+    name: "Claude 3.5 Sonnet",
+    description: "Advanced reasoning by Anthropic",
+    color: "text-orange-400",
+    icon: "✨",
+  },
+  huggingface: {
+    name: "Hugging Face (Hermes)",
+    description: "Open-source Hermes model",
+    color: "text-yellow-400",
+    icon: "🤗",
+  },
+};
+
 export function getModelConfig(
   provider: ModelProvider,
   apiKey: string

@@ -43,14 +43,26 @@ export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
       className="flex-1 overflow-y-auto p-4 custom-scrollbar scroll-smooth"
     >
       <div className="max-w-4xl mx-auto flex flex-col w-full pb-4">
-        {messages.map((msg, index) => (
-          <MessageBubble
-            key={msg.id || index}
-            role={msg.role as "user" | "assistant"}
-            content={msg.content}
-            isStreaming={isStreaming && index === messages.length - 1 && msg.role === "assistant"}
-          />
-        ))}
+        {messages.map((msg, index) => {
+          if (msg.role === "system") {
+            return (
+              <div key={msg.id || index} className="w-full flex justify-center my-4 animate-in fade-in">
+                <div className="bg-brand-gray/30 text-brand-white/50 text-xs px-3 py-1 rounded-full border border-brand-gray/50">
+                  {msg.content}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <MessageBubble
+              key={msg.id || index}
+              role={msg.role as "user" | "assistant"}
+              content={msg.content}
+              isStreaming={isStreaming && index === messages.length - 1 && msg.role === "assistant"}
+            />
+          );
+        })}
         {isStreaming && messages[messages.length - 1]?.role === "user" && (
           <MessageBubble
             role="assistant"

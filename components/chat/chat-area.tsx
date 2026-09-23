@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
 import { getKeys, ApiKeys } from "@/lib/key-storage";
+import { MODELS_METADATA } from "@/lib/ai-providers";
 
 interface ChatAreaProps {
   onOpenSidebar: () => void;
@@ -18,7 +19,7 @@ export function ChatArea({ onOpenSidebar, selectedModel }: ChatAreaProps) {
 
   const modelNames = {
     deepseek: "DeepSeek Chat",
-    claude: "Claude 3.5 Sonnet",
+    anthropic: "Claude 3.5 Sonnet",
     huggingface: "Hugging Face (Hermes)",
   };
 
@@ -38,13 +39,40 @@ export function ChatArea({ onOpenSidebar, selectedModel }: ChatAreaProps) {
   // Extract values ignoring exact types to bypass TS errors since this works correctly at runtime.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const useChatProps = useChat(chatConfig as any) as any;
+  // Memoize messages array reference if we only care about length, or just disable the exhaustive-deps
+  // warning since `useChat`'s `messages` array changes predictably.
   const messages = useChatProps.messages || [];
+  const setMessages = useChatProps.setMessages;
   const input = useChatProps.input || "";
   const handleInputChange = useChatProps.handleInputChange;
   const handleSubmit = useChatProps.handleSubmit;
   const isLoading = useChatProps.isLoading || false;
   const stop = useChatProps.stop;
   const error = useChatProps.error;
+
+  // Track the previous model to insert system messages
+  const [prevModel, setPrevModel] = useState<ModelOption>(selectedModel);
+
+  useEffect(() => {
+    if (selectedModel !== prevModel) {
+      setTimeout(() => {
+        if (messages.length > 0) {
+          const modelMeta = MODELS_METADATA[selectedModel];
+          const newSystemMessage = {
+            id: Date.now().toString(),
+            role: "system",
+            content: `Switched to ${modelMeta.name}`,
+          };
+          // Insert the system message
+          if (typeof setMessages === "function") {
+            setMessages([...messages, newSystemMessage]);
+          }
+        }
+        setPrevModel(selectedModel);
+      }, 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModel]);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,8 +99,10 @@ export function ChatArea({ onOpenSidebar, selectedModel }: ChatAreaProps) {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <div className="font-medium text-brand-white">
-          {modelNames[selectedModel]}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-gray/30 border border-brand-gray/50 font-medium text-sm text-brand-white">
+          <span className="mr-1">{MODELS_METADATA[selectedModel].icon}</span>
+          {MODELS_METADATA[selectedModel].name}
+          <div className={`w-2 h-2 rounded-full ml-1.5 ${MODELS_METADATA[selectedModel].color.replace('text-', 'bg-')}`} />
         </div>
       </header>
 

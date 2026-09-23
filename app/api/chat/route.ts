@@ -21,11 +21,23 @@ export async function POST(req: Request) {
       );
     }
 
+    // Filter out system messages injected by the UI for model switching
+    // because providers like Anthropic expect specific message structures
+    // and inline system messages can cause errors.
+    const filteredMessages = messages.filter((m: { role: string; content: string }) => m.role !== 'system');
+
+    if (filteredMessages.length === 0) {
+       return NextResponse.json(
+        { error: "No valid messages found after filtering." },
+        { status: 400 }
+      );
+    }
+
     const model = getModelConfig(provider as ModelProvider, apiKey);
 
     const result = streamText({
       model,
-      messages,
+      messages: filteredMessages,
     });
 
     // Use toDataStreamResponse() or toTextStreamResponse depending on ai sdk v7
@@ -48,7 +60,15 @@ export async function POST(req: Request) {
     }
 
     if (status === 429) {
-      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
+      return NextResponse.json({ error: "Rate limit or quota exceeded. Please try again later." }, { status: 429 });
+    }
+
+    // Provider specific error heuristics based on message content
+    if (message.toLowerCase().includes("credit") || message.toLowerCase().includes("balance")) {
+      return NextResponse.json({ error: "Insufficient credits/balance with the provider." }, { status: 402 });
+    }
+    if (message.toLowerCase().includes("loading") || message.toLowerCase().includes("queue")) {
+      return NextResponse.json({ error: "Model is currently loading or in queue. Please wait and try again." }, { status: 503 });
     }
 
     return NextResponse.json(
