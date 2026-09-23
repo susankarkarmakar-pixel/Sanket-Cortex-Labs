@@ -69,7 +69,7 @@ export function Sidebar({
           <div className="flex items-center justify-between mb-6">
             <div className="flex flex-col">
               <h1 className="text-xl font-bold flex items-center gap-2 text-brand-white">
-                <span role="img" aria-label="brain">🧠</span> OmniKey AI
+                <span role="img" aria-label="brain">🧠</span> Susan AI
               </h1>
               <span className="text-xs text-brand-gray/70 mt-1 pl-1 opacity-70">
                 by Sanket Cortex Labs

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OmniKey AI — Sanket Cortex Labs",
+  title: "Susan AI — Sanket Cortex Labs",
   description: "Multi-model AI chat interface with BYOK support",
 };
 

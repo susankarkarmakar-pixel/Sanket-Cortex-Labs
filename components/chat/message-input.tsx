@@ -82,7 +82,7 @@ export function MessageInput({
         )}
       </form>
       <div className="text-center mt-2 text-xs text-brand-white/30">
-        OmniKey AI may produce inaccurate information about people, places, or facts.
+        Susan AI may produce inaccurate information about people, places, or facts.
       </div>
     </div>
   );

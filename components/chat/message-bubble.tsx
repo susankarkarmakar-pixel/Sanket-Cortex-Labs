@@ -79,10 +79,22 @@ export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps
                   ),
                   th: ({ children }) => <th className="border-b border-brand-gray/50 px-4 py-2 font-medium bg-brand-gray/50">{children}</th>,
                   td: ({ children }) => <td className="border-b border-brand-gray/50 px-4 py-2 last:border-b-0">{children}</td>,
-                  code: ({ inline, className, children, ...props }: { inline?: boolean, className?: string, children?: React.ReactNode }) => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  code: ({ inline, className, children, node, ...props }: any) => {
                     const match = /language-(\w+)/.exec(className || "");
                     const language = match ? match[1] : "";
-                    const codeString = String(children).replace(/\n$/, "");
+
+                    // Extract raw text for copying
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const extractText = (node: any): string => {
+                      if (!node) return "";
+                      if (node.type === "text") return node.value || "";
+                      if (node.children) return node.children.map(extractText).join("");
+                      return "";
+                    };
+
+                    const rawCodeString = node ? extractText(node) : String(children).replace(/\n$/, "");
+                    const codeString = rawCodeString.replace(/\n$/, "");
 
                     if (!inline) {
                       return (

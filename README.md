@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🧠 OmniKey AI</h1>
+  <h1>🧠 Susan AI</h1>
   <p><em>by Sanket Cortex Labs</em></p>
   <p>"Neural Solutions for a Smarter World"</p>
   <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
@@ -8,7 +8,7 @@
 ## About
 Sanket Cortex Labs is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
 
-OmniKey AI is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
+Susan AI is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
 Use DeepSeek, Claude, and Hugging Face models from a single unified interface.
 
 ## Features
@@ -51,7 +51,7 @@ Use DeepSeek, Claude, and Hugging Face models from a single unified interface.
 
 ## Security
 **Your keys are safe.**
-OmniKey AI follows a strict BYOK (Bring Your Own Key) policy. API keys for DeepSeek, Anthropic, and Hugging Face are **never sent to or stored on our servers**.
+Susan AI follows a strict BYOK (Bring Your Own Key) policy. API keys for DeepSeek, Anthropic, and Hugging Face are **never sent to or stored on our servers**.
 All keys are obfuscated (Base64) and stored locally entirely within your browser's `localStorage`. (Note: In a true production environment, AES-256 encryption is recommended).
 
 ## License
