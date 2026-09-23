@@ -1,5 +1,6 @@
 <div align="center">
-  <h1>🧠 Susan AI</h1>
+  <img src="public/logo.png" alt="Sanket Cortex Labs Logo" width="150" />
+  <h1>Susan AI</h1>
   <p><em>by Sanket Cortex Labs</em></p>
   <p>"Neural Solutions for a Smarter World"</p>
   <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
