@@ -12,9 +12,34 @@ import { MODELS_METADATA } from "@/lib/ai-providers";
 interface ChatAreaProps {
   onOpenSidebar: () => void;
   selectedModel: ModelOption;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  messages: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setMessages: (messages: any[]) => void;
+  input: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handleInputChange: (e: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handleSubmit: (e: any) => void;
+  isLoading: boolean;
+  stop: () => void;
+  error: Error | undefined;
+  conversationTitle: string | null;
 }
 
-export function ChatArea({ onOpenSidebar, selectedModel }: ChatAreaProps) {
+export function ChatArea({
+  onOpenSidebar,
+  selectedModel,
+  messages,
+  setMessages,
+  input,
+  handleInputChange,
+  handleSubmit,
+  isLoading,
+  stop,
+  error,
+  conversationTitle
+}: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
 
   const modelNames = {
@@ -23,32 +48,6 @@ export function ChatArea({ onOpenSidebar, selectedModel }: ChatAreaProps) {
     huggingface: "Hugging Face (Hermes)",
   };
 
-  const chatConfig = {
-    api: "/api/chat",
-    body: {
-      provider: selectedModel,
-      apiKey: getKeys()[selectedModel as keyof ApiKeys] || "",
-    },
-    onError: (err: Error) => {
-      setToastError(err.message || "An error occurred during chat.");
-      setTimeout(() => setToastError(null), 5000);
-    }
-  };
-
-  // We are using @ai-sdk/react which has types that conflict or use generic constraints.
-  // Extract values ignoring exact types to bypass TS errors since this works correctly at runtime.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const useChatProps = useChat(chatConfig as any) as any;
-  // Memoize messages array reference if we only care about length, or just disable the exhaustive-deps
-  // warning since `useChat`'s `messages` array changes predictably.
-  const messages = useChatProps.messages || [];
-  const setMessages = useChatProps.setMessages;
-  const input = useChatProps.input || "";
-  const handleInputChange = useChatProps.handleInputChange;
-  const handleSubmit = useChatProps.handleSubmit;
-  const isLoading = useChatProps.isLoading || false;
-  const stop = useChatProps.stop;
-  const error = useChatProps.error;
 
   // Track the previous model to insert system messages
   const [prevModel, setPrevModel] = useState<ModelOption>(selectedModel);
@@ -99,10 +98,17 @@ export function ChatArea({ onOpenSidebar, selectedModel }: ChatAreaProps) {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-gray/30 border border-brand-gray/50 font-medium text-sm text-brand-white">
-          <span className="mr-1">{MODELS_METADATA[selectedModel].icon}</span>
-          {MODELS_METADATA[selectedModel].name}
-          <div className={`w-2 h-2 rounded-full ml-1.5 ${MODELS_METADATA[selectedModel].color.replace('text-', 'bg-')}`} />
+        <div className="flex-1 min-w-0 flex items-center">
+          {conversationTitle && (
+            <div className="truncate font-medium text-brand-white mr-4 max-w-[200px] md:max-w-[400px]">
+              {conversationTitle}
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-brand-gray/30 border border-brand-gray/50 font-medium text-xs text-brand-white">
+            <span className="mr-0.5">{MODELS_METADATA[selectedModel].icon}</span>
+            {MODELS_METADATA[selectedModel].name}
+            <div className={`w-1.5 h-1.5 rounded-full ml-1.5 ${MODELS_METADATA[selectedModel].color.replace('text-', 'bg-')}`} />
+          </div>
         </div>
       </header>
 
