@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/susan-logo.svg" type="image/svg+xml" />
+        <link rel="icon" href="/susan-ai-mark.png" type="image/png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-bg-main text-text-main`}

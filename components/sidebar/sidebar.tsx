@@ -102,18 +102,12 @@ export function Sidebar({
         <div className="flex-1 flex flex-col p-4 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/susan-logo.svg" alt="Susan AI Logo" className="w-8 h-8 object-contain opacity-80" />
-                <h1 className="text-[1.3rem] font-medium text-text-main tracking-tight">
-                  Susan AI
-                </h1>
-              </div>
-              <span className="text-[0.65rem] text-text-muted mt-1 pl-1">
-                by Sanket Pixel Technologies
-              </span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/susan-ai-logo.png"
+              alt="Susan AI — Sanket Pixel Technologies"
+              className="w-52 max-w-full h-auto max-h-20 object-contain object-left"
+            />
             <button
               onClick={onClose}
               className="p-1 rounded-md hover:bg-black/5 lg:hidden text-text-muted hover:text-text-main"
