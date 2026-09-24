@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Lock, Trash2, ExternalLink } from "lucide-react";
 import { ApiKeyInput } from "./api-key-input";
 import { saveKeys, getKeys, clearKeys, ApiKeys } from "@/lib/key-storage";
@@ -15,19 +15,56 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [keys, setKeys] = useState<ApiKeys>({});
   const [savedKeys, setSavedKeys] = useState<ApiKeys>({});
   const [toast, setToast] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
   // Only update keys when opening the modal, to avoid state lag
   // Since this component might be mounted but hidden, we load keys when it opens
   useEffect(() => {
     if (isOpen) {
+      previouslyFocused.current = document.activeElement as HTMLElement | null;
       const storedKeys = getKeys();
       // Use setTimeout to avoid synchronous setState inside effect
       setTimeout(() => {
         setKeys(storedKeys);
         setSavedKeys(storedKeys);
       }, 0);
+      window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      previouslyFocused.current?.focus();
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])"
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -56,14 +93,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-surface border border-border-main/50 rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh]">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="susan-settings-title" className="relative w-full max-w-md bg-surface border border-border-main/50 rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
+          <h2 id="susan-settings-title" className="text-xl font-semibold text-text-main flex items-center gap-2">
             ⚙️ Susan AI Configuration
           </h2>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             className="p-1 rounded-md text-text-muted hover:text-text-main hover:bg-black/5 transition-colors"
           >

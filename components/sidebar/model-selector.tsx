@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Shield, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INSTANT_CHAT_PROVIDERS, MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
@@ -36,6 +36,8 @@ const MODELS = INSTANT_CHAT_PROVIDERS.map((id) => ({
 export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [keys, setKeys] = useState<ApiKeys>({});
+  const [activeIndex, setActiveIndex] = useState(0);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -48,11 +50,30 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
 
   const selectedModel = MODELS.find(m => m.id === selected) || MODELS[0];
   const Icon = selectedModel.icon;
+  const selectedIndex = Math.max(0, MODELS.findIndex((model) => model.id === selected));
+
+  const openSelector = (index = selectedIndex) => {
+    setActiveIndex(index);
+    setIsOpen(true);
+    window.requestAnimationFrame(() => optionRefs.current[index]?.focus());
+  };
+
+  const moveActive = (direction: 1 | -1) => {
+    const nextIndex = (activeIndex + direction + MODELS.length) % MODELS.length;
+    setActiveIndex(nextIndex);
+    optionRefs.current[nextIndex]?.focus();
+  };
 
   return (
     <div className="relative w-full">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openSelector();
+          }
+        }}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -79,15 +100,38 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
             {MODELS.map((model) => {
               const ModelIcon = model.icon;
               const hasKey = !!keys[model.id];
+              const modelIndex = MODELS.findIndex((candidate) => candidate.id === model.id);
               return (
                 <button
                   key={model.id}
                   type="button"
                   role="option"
+                  tabIndex={activeIndex === modelIndex ? 0 : -1}
                   aria-selected={selected === model.id}
+                  ref={(element) => { optionRefs.current[modelIndex] = element; }}
                   onClick={() => {
                     onSelect(model.id);
                     setIsOpen(false);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      moveActive(1);
+                    } else if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      moveActive(-1);
+                    } else if (event.key === "Home") {
+                      event.preventDefault();
+                      setActiveIndex(0);
+                      optionRefs.current[0]?.focus();
+                    } else if (event.key === "End") {
+                      event.preventDefault();
+                      setActiveIndex(MODELS.length - 1);
+                      optionRefs.current[MODELS.length - 1]?.focus();
+                    } else if (event.key === "Escape") {
+                      event.preventDefault();
+                      setIsOpen(false);
+                    }
                   }}
                   className={cn(
                     "w-full flex items-start gap-3 px-3 py-2.5 text-sm transition-colors group",
