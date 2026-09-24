@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Lock } from "lucide-react";
+import { X, Lock, Trash2, ExternalLink } from "lucide-react";
 import { ApiKeyInput } from "./api-key-input";
-import { saveKeys, getKeys, ApiKeys } from "@/lib/key-storage";
+import { saveKeys, getKeys, clearKeys, ApiKeys } from "@/lib/key-storage";
+import { FREE_TIER_DIRECTORY, MODELS_METADATA } from "@/lib/ai-providers";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -70,8 +71,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </button>
         </div>
         <p className="text-sm text-text-muted mb-6">
-          Your keys are stored locally in your browser and never sent to our servers
+          Keys stay in this browser until you remove them. Each chat request sends the selected key through this app to the chosen provider; Susan AI does not persist it.
         </p>
+
+        <div className="mb-5 rounded-xl border border-green-600/20 bg-green-50/60 p-3">
+          <h3 className="mb-2 text-sm font-semibold text-text-main">Free-tier options</h3>
+          <div className="space-y-2">
+            {FREE_TIER_DIRECTORY.map((item) => (
+              <div key={item.provider} className="flex items-start justify-between gap-3 text-xs">
+                <div>
+                  <p className="font-medium text-text-main">{item.title} <span className="font-normal text-green-700">· {item.model}</span></p>
+                  <p className="text-text-muted">{item.note}</p>
+                </div>
+                <a href={MODELS_METADATA[item.provider].setupUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 text-accent hover:underline" aria-label={`Get ${item.title} API key`}>Get key <ExternalLink className="inline h-3 w-3" /></a>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-text-muted">“Free-tier” means the provider may offer free quota; it is not a guarantee of unlimited or permanent free access.</p>
+        </div>
 
         {/* Form Body */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
@@ -106,7 +123,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             label="Google API Key (Gemini)"
             provider="google"
             placeholder="AIza..."
-            helpUrl="https://aistudio.google.com/app/apikey"
+            helpUrl="https://aistudio.google.com/apikey"
             value={keys.google || ""}
             onChange={(val) => handleKeyChange("google", val)}
             isSaved={!!savedKeys.google}
@@ -156,11 +173,32 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             onChange={(val) => handleKeyChange("sarvam", val)}
             isSaved={!!savedKeys.sarvam}
           />
+          <ApiKeyInput
+            label="OpenRouter API Key (free router)"
+            provider="openrouter"
+            placeholder="sk-or-v1-..."
+            helpUrl="https://openrouter.ai/settings/keys"
+            value={keys.openrouter || ""}
+            onChange={(val) => handleKeyChange("openrouter", val)}
+            isSaved={!!savedKeys.openrouter}
+          />
         </div>
 
         {/* Footer */}
         <div className="mt-6 pt-4 border-t border-border-main/50">
           <div className="flex items-center justify-end gap-3 mb-4">
+            <button
+              onClick={() => {
+                if (window.confirm("Remove all saved API keys from this browser?")) {
+                  clearKeys();
+                  setKeys({});
+                  setSavedKeys({});
+                }
+              }}
+              className="mr-auto flex items-center gap-1.5 px-2 py-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" /> Clear keys
+            </button>
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-main transition-colors"
@@ -177,7 +215,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-text-muted/70 text-center">
             <Lock className="w-4 h-4 shrink-0" />
-            <span>🔒 Your keys are stored locally in your browser. Sanket Pixel Technologies never accesses your API keys.</span>
+            <span>Your keys are stored locally and used only to route requests to the selected provider. Review provider terms before entering production credentials.</span>
           </div>
         </div>
 

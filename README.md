@@ -1,60 +1,70 @@
 <div align="center">
   <img src="public/susan-logo.svg" alt="Susan AI Logo" width="150" />
-  <h1>🧠 Susan AI</h1>
-  <p><strong>Neural Solutions for a Smarter World</strong></p>
-  <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
-  <p><em>An intelligent multi-model chat interface by Sanket Pixel Technologies</em></p>
+  <h1>Susan AI</h1>
+  <p><strong>Private multi-model AI chat with Bring Your Own Key support</strong></p>
+  <p>An intelligent chat workspace by Sanket Pixel Technologies.</p>
 </div>
 
-## About
-Susan AI is a product of Sanket Pixel Technologies, designed to build intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
+## Product overview
 
-It is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
-Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, Manus, and Sarvam models from a single unified interface.
+Susan AI provides one chat interface for DeepSeek, Claude, Hugging Face, Gemini, OpenAI, Qwen, Kimi, Manus, and Sarvam integrations. Conversations are persisted locally in the browser, and users can export or import their chat history as JSON.
 
 ## Features
-- 🔑 BYOK - Your keys, your data
-- 🔄 Multi-model support (DeepSeek, Claude, Hugging Face, Google Gemini, OpenAI, Qwen, Kimi, Manus, Sarvam)
-- ⚡ Real-time streaming responses
-- 💾 Chat history with local persistence
-- 📝 Markdown & code highlighting
-- 📱 Fully responsive design
-- 🎨 Dark theme with Susan AI branding
 
-## Tech Stack
-- Next.js 16 (App Router)
-- React 19
-- TypeScript
-- Tailwind CSS
-- Vercel AI SDK 7
-- React Markdown
+- Browser-local BYOK storage with clear-key controls.
+- Streaming responses through the Vercel AI SDK.
+- Markdown, tables, links, and syntax-highlighted code blocks.
+- Responsive desktop and mobile layout.
+- Conversation autosave, history search surface, JSON export/import, and clear-history controls.
+- Request validation, provider-safe error messages, rate limiting, request-size limits, and secure default HTTP headers.
+- `GET /api/health` deployment smoke-test endpoint.
 
-## Getting Started
+## Requirements
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/susankarkarmakar-pixel/Susan-AI.git
-   cd Susan-AI
-   ```
+- Node.js 20 or newer.
+- An API key for at least one supported provider.
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+## Local development
 
-3. **Environment Setup:**
-   Create a `.env.local` file in the root directory. You can use `.env.example` as a template, although API keys are primarily provided by users in the UI.
+```bash
+npm ci
+npm run dev
+```
 
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), open **Settings**, add a provider key, select that provider, and send a message.
 
-## Security
-**Your keys are safe.**
-Susan AI follows a strict BYOK (Bring Your Own Key) policy. API keys for the configured models are **never sent to or stored on our servers**.
-All keys are obfuscated using Base64 encoding and stored entirely within your browser's `localStorage`. Note: Base64 is an encoding mechanism, not true encryption. Avoid accessing the app on shared devices.
+## Production validation
+
+```bash
+npm run lint
+npm run build
+npm start
+```
+
+Once the server is running, verify the health endpoint:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Expected response:
+
+```json
+{"status":"ok","service":"susan-ai"}
+```
+
+## Data and security model
+
+API keys are stored in the browser's `localStorage` using Base64 encoding. Base64 is **not encryption**, so do not use this feature on shared or compromised devices. Keys are not persisted by Susan AI, but the selected key is sent through the app's `/api/chat` route for each request and then forwarded to the selected provider. Use provider-restricted keys with the minimum permissions and rotate them if a device is lost.
+
+Conversation history also stays in browser storage unless the user exports it. Exported JSON files contain message content and should be treated as sensitive data.
+
+The built-in rate limit is an application-level baseline for single-instance deployments. For production behind multiple instances, add a shared limiter such as Redis or the hosting platform's edge rate limiting.
+
+## Supported providers
+
+Provider endpoints and model identifiers are defined in `lib/ai-providers.ts`. Verify current provider model names and account availability before enabling a provider in a public release, especially for integrations whose API compatibility changes frequently.
 
 ## License
+
 MIT

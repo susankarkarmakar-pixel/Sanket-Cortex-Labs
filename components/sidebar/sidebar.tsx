@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings, X, Trash2 } from "lucide-react";
+import { Plus, Settings, X, Trash2, Download, Upload, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector, ModelOption } from "./model-selector";
-import { ConversationSummary, getConversations, deleteConversation } from "@/lib/chat-storage";
+import { ConversationSummary, getConversations, deleteConversation, clearConversations, exportConversations, importConversations } from "@/lib/chat-storage";
 import { MODELS_METADATA } from "@/lib/ai-providers";
 
 interface SidebarProps {
@@ -44,6 +44,41 @@ export function Sidebar({
     e.stopPropagation();
     deleteConversation(id);
     if (currentConversationId === id) {
+      onNewChat();
+    }
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([exportConversations()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `susan-ai-conversations-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const result = importConversations(await file.text());
+        window.alert(`Imported ${result.imported} conversation${result.imported === 1 ? "" : "s"}.`);
+      } catch (error) {
+        window.alert(error instanceof Error ? error.message : "Could not import that file.");
+      }
+    };
+    input.click();
+  };
+
+  const handleClear = () => {
+    if (conversations.length === 0) return;
+    if (window.confirm("Delete all saved conversations from this browser? This cannot be undone.")) {
+      clearConversations();
       onNewChat();
     }
   };
@@ -151,6 +186,18 @@ export function Sidebar({
                 })}
               </div>
             )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-1.5 mt-3">
+            <button type="button" onClick={handleExport} title="Export conversations" className="flex items-center justify-center gap-1 rounded-lg border border-border-main/50 px-2 py-2 text-[11px] text-text-muted hover:bg-black/5 hover:text-text-main">
+              <Download className="h-3.5 w-3.5" /> Export
+            </button>
+            <button type="button" onClick={handleImport} title="Import conversations" className="flex items-center justify-center gap-1 rounded-lg border border-border-main/50 px-2 py-2 text-[11px] text-text-muted hover:bg-black/5 hover:text-text-main">
+              <Upload className="h-3.5 w-3.5" /> Import
+            </button>
+            <button type="button" onClick={handleClear} title="Delete all conversations" className="flex items-center justify-center gap-1 rounded-lg border border-border-main/50 px-2 py-2 text-[11px] text-text-muted hover:bg-red-50 hover:text-red-600">
+              <Trash className="h-3.5 w-3.5" /> Clear
+            </button>
           </div>
         </div>
 

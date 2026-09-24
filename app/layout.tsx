@@ -14,7 +14,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Susan AI — Sanket Pixel Technologies",
-  description: "Bring your own API keys to chat with DeepSeek, Claude, and Hugging Face models seamlessly.",
+  description: "A private, multi-model AI workspace with browser-local conversation history and Bring Your Own Key support.",
+  applicationName: "Susan AI",
+  keywords: ["AI chat", "BYOK", "DeepSeek", "Claude", "Gemini", "OpenAI"],
 };
 
 export default function RootLayout({

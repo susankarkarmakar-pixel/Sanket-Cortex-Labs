@@ -24,6 +24,7 @@ const MODELS = [
   { id: "kimi" as const, name: MODELS_METADATA.kimi.name, description: MODELS_METADATA.kimi.description, icon: Zap },
   { id: "manus" as const, name: MODELS_METADATA.manus.name, description: MODELS_METADATA.manus.description, icon: Star },
   { id: "sarvam" as const, name: MODELS_METADATA.sarvam.name, description: MODELS_METADATA.sarvam.description, icon: Shield },
+  { id: "openrouter" as const, name: MODELS_METADATA.openrouter.name, description: MODELS_METADATA.openrouter.description, icon: Globe },
 ] as const;
 
 export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
@@ -46,6 +47,10 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
     <div className="relative w-full">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={`Select model, current model ${selectedModel.name}`}
         className="w-full flex items-center justify-between px-3 py-2.5 bg-surface hover:bg-black/5 rounded-xl border border-border-main/50 transition-colors text-sm text-text-main shadow-sm"
       >
         <div className="flex items-center gap-2">
@@ -64,13 +69,16 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute z-20 w-full mt-1.5 bg-surface border border-border-main rounded-xl shadow-lg overflow-hidden py-1">
+          <div role="listbox" aria-label="Available AI models" className="absolute z-20 w-full mt-1.5 bg-surface border border-border-main rounded-xl shadow-lg overflow-hidden py-1">
             {MODELS.map((model) => {
               const ModelIcon = model.icon;
               const hasKey = !!keys[model.id];
               return (
                 <button
                   key={model.id}
+                  type="button"
+                  role="option"
+                  aria-selected={selected === model.id}
                   onClick={() => {
                     onSelect(model.id);
                     setIsOpen(false);

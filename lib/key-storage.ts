@@ -1,6 +1,3 @@
-// Note: This uses simple base64 encoding for basic obfuscation.
-// In a true production environment, you should use proper AES-256 encryption.
-
 export interface ApiKeys {
   deepseek?: string;
   anthropic?: string;
@@ -11,6 +8,7 @@ export interface ApiKeys {
   kimi?: string;
   manus?: string;
   sarvam?: string;
+  openrouter?: string;
 }
 
 const STORAGE_KEY = "susan_api_keys_v1";
@@ -18,33 +16,22 @@ const OLD_STORAGE_KEY = "omnikey_api_keys_v1";
 
 export function saveKeys(keys: ApiKeys): void {
   if (typeof window === "undefined") return;
-
-  const currentKeys = getKeys();
-  const updatedKeys = { ...currentKeys, ...keys };
-
-  // Remove empty keys to avoid storing empty strings
   const cleanedKeys: ApiKeys = {};
-  (Object.keys(updatedKeys) as Array<keyof ApiKeys>).forEach((key) => {
-    if (updatedKeys[key]) {
-      cleanedKeys[key] = updatedKeys[key];
-    }
-  });
-
-  const jsonString = JSON.stringify(cleanedKeys);
-  const base64Encoded = btoa(jsonString);
-  localStorage.setItem(STORAGE_KEY, base64Encoded);
-
-  // Dispatch custom event for UI updates
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event('keys-updated'));
+  for (const key of Object.keys(keys) as Array<keyof ApiKeys>) {
+    const value = keys[key]?.trim();
+    if (value) cleanedKeys[key] = value;
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY, btoa(JSON.stringify(cleanedKeys)));
+    window.dispatchEvent(new Event("keys-updated"));
+  } catch (error) {
+    console.error("Failed to save API keys", error);
   }
 }
 
 export function getKeys(): ApiKeys {
   if (typeof window === "undefined") return {};
-
   let stored = localStorage.getItem(STORAGE_KEY);
-
   if (!stored) {
     stored = localStorage.getItem(OLD_STORAGE_KEY);
     if (stored) {
@@ -52,28 +39,23 @@ export function getKeys(): ApiKeys {
       localStorage.removeItem(OLD_STORAGE_KEY);
     }
   }
-
   if (!stored) return {};
-
   try {
-    const jsonString = atob(stored);
-    return JSON.parse(jsonString) as ApiKeys;
-  } catch (e) {
-    console.error("Failed to decode stored API keys", e);
+    const parsed = JSON.parse(atob(stored)) as ApiKeys;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.error("Failed to decode stored API keys", error);
     return {};
   }
 }
 
 export function hasKey(provider: keyof ApiKeys): boolean {
-  const keys = getKeys();
-  return !!keys[provider];
+  return Boolean(getKeys()[provider]);
 }
 
 export function clearKeys(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event('keys-updated'));
-  }
+  localStorage.removeItem(OLD_STORAGE_KEY);
+  window.dispatchEvent(new Event("keys-updated"));
 }
