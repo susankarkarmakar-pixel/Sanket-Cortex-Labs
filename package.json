@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -46,11 +47,50 @@
     "appId": "com.sanketpixel.susanai",
     "productName": "Susan AI",
     "artifactName": "Susan-AI-${version}-${os}-${arch}.${ext}",
-    "directories": { "output": "release" },
-    "files": ["electron/**/*", "public/**/*", ".next/standalone/**/*", ".next/static/**/*"],
-    "extraResources": [{ "from": ".next/standalone", "to": "app/.next/standalone" }, { "from": ".next/static", "to": "app/.next/static" }, { "from": "public", "to": "app/public" }],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }] },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "perMachine": false },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      ".next/standalone/**/*",
+      ".next/static/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "app/.next/standalone"
+      },
+      {
+        "from": ".next/static",
+        "to": "app/.next/static"
+      },
+      {
+        "from": "public",
+        "to": "app/public"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
     "publish": null
   }
 }
