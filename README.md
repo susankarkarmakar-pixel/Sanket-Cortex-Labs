@@ -2,12 +2,14 @@
   <img src="public/susan-ai-logo.jpg" alt="Susan AI Logo" width="150" />
   <h1>Susan AI</h1>
   <p><strong>Private multi-model AI chat with Bring Your Own Key support</strong></p>
-  <p>An intelligent chat workspace by Sanket Pixel Technologies.</p>
+  <p>A private, flexible, and provider-agnostic AI workspace by Sanket Pixel Technologies.</p>
 </div>
+
+Susan AI is a modern personal AI assistant that brings multiple leading language-model providers into one focused chat workspace. It is designed for users who want the freedom to choose their own models and API keys while keeping conversations under their control. With Bring Your Own Key (BYOK) support, local conversation storage, streaming responses, and a responsive interface, Susan AI provides a practical foundation for everyday research, writing, coding, brainstorming, and productivity workflows.
 
 ## Product overview
 
-Susan AI provides one chat interface for DeepSeek, Claude, Hugging Face, Gemini, OpenAI, Qwen, Kimi, Manus, Sarvam, and OpenRouter integrations. Conversations are persisted locally in the browser, and users can export or import their chat history as JSON.
+Susan AI provides one streamlined chat interface for DeepSeek, Claude, Hugging Face, Gemini, OpenAI, Qwen, Kimi, Manus, Sarvam, and OpenRouter integrations. Users can select the provider and model that best fit each task, bring their own credentials, and switch between supported services without leaving the workspace. Conversations are persisted locally in the browser, and users can export or import their chat history as JSON. The application is suitable for personal use, experimentation with multiple AI providers, and self-managed deployments where privacy and configuration flexibility matter.
 
 ## Features
 
