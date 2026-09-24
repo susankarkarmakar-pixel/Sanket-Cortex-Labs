@@ -2,6 +2,7 @@
   <img src="public/logo.png" alt="Sanket Cortex Labs Logo" width="150" />
   <h1>Susan AI</h1>
   <p><strong>Neural Solutions for a Smarter World</strong></p>
+  <p><strong>Brand- Sanket Pixel Technologies</strong></p>
   <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
 </div>
 
