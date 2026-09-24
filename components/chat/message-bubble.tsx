@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { Check, Copy, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,9 +12,11 @@ interface MessageBubbleProps {
   role: "user" | "assistant" | "system" | "data";
   content: string;
   isStreaming?: boolean;
+  onRetry?: () => void;
 }
 
-export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps) {
+export function MessageBubble({ role, content, isStreaming, onRetry }: MessageBubbleProps) {
+  const [copied, setCopied] = useState(false);
   // If it's a system message, we don't render it here (chat-messages handles it)
   // or if we must, just return null to avoid breaking layout
   if (role === "system" || role === "data") return null;
@@ -121,6 +127,36 @@ export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps
               </ReactMarkdown>
               {isStreaming && (
                 <span className="inline-block w-2 h-4 ml-1 bg-text-main/50 animate-pulse align-middle" />
+              )}
+              {!isStreaming && content && (
+                <div className="mt-3 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(content);
+                      setCopied(true);
+                      window.setTimeout(() => setCopied(false), 1500);
+                    }}
+                    aria-label={copied ? "Response copied" : "Copy response"}
+                    title={copied ? "Copied" : "Copy response"}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted hover:bg-black/5 hover:text-text-main"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                  {onRetry && (
+                    <button
+                      type="button"
+                      onClick={onRetry}
+                      aria-label="Retry response"
+                      title="Retry response"
+                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted hover:bg-black/5 hover:text-text-main"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Retry
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}

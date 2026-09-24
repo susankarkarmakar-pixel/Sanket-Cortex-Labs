@@ -33,6 +33,7 @@ export default function Home() {
   const messages = useMemo(() => useChatProps.messages || [], [useChatProps.messages]);
   const setMessages = useChatProps.setMessages;
   const sendMessage = useChatProps.sendMessage;
+  const regenerate = useChatProps.regenerate;
   const isLoading = useChatProps.status === "submitted" || useChatProps.status === "streaming";
   const stop = useChatProps.stop;
   const error = useChatProps.error;
@@ -101,7 +102,7 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={handleNewChat} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} />
-      <ChatArea onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} conversationTitle={conversationTitle} />
+      <ChatArea onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );

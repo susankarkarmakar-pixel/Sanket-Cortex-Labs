@@ -19,10 +19,11 @@ interface ChatAreaProps {
   isLoading: boolean;
   stop: () => void;
   error: Error | undefined;
+  onRetry: () => void;
   conversationTitle: string | null;
 }
 
-export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, conversationTitle }: ChatAreaProps) {
+export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
@@ -51,10 +52,32 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
       </header>
 
       {toastError && <div role="alert" className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">{toastError}</div>}
-      {error && !toastError && <div role="alert" className="absolute left-1/2 top-20 z-30 max-w-[90%] -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-center text-sm font-medium text-white shadow-lg backdrop-blur-sm">{error.message}</div>}
+      {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
 
-      <ChatMessages messages={messages} isStreaming={isLoading} />
+      <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} />
       <MessageInput input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} />
+    </div>
+  );
+}
+
+function ErrorRecovery({ error, onRetry, onOpenSettings, onOpenModels }: { error: Error; onRetry: () => void; onOpenSettings: () => void; onOpenModels: () => void }) {
+  const message = error.message || "The provider could not complete the request.";
+  const normalized = message.toLowerCase();
+  const isKeyError = normalized.includes("api key") || normalized.includes("unauthorized") || normalized.includes("forbidden");
+  const isRetryable = normalized.includes("rate limit") || normalized.includes("quota") || normalized.includes("busy") || normalized.includes("try again");
+  const isModelError = normalized.includes("model") || normalized.includes("provider");
+  const action = isKeyError
+    ? { label: "Open Settings", onClick: onOpenSettings }
+    : isRetryable
+      ? { label: "Retry", onClick: onRetry }
+      : isModelError
+        ? { label: "Choose another model", onClick: onOpenModels }
+        : null;
+
+  return (
+    <div role="alert" className="absolute left-1/2 top-20 z-30 flex max-w-[92%] -translate-x-1/2 items-center gap-3 rounded-lg bg-red-500/95 px-4 py-2.5 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
+      <span>{message}</span>
+      {action && <button type="button" onClick={action.onClick} className="shrink-0 rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold hover:bg-white/25">{action.label}</button>}
     </div>
   );
 }

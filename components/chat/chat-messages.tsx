@@ -14,9 +14,10 @@ export type Message = {
 interface ChatMessagesProps {
   messages: Message[];
   isStreaming?: boolean;
+  onRetry?: () => void;
 }
 
-export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
+export function ChatMessages({ messages, isStreaming, onRetry }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive or while streaming
@@ -60,6 +61,7 @@ export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
               role={msg.role as "user" | "assistant"}
               content={msg.content}
               isStreaming={isStreaming && index === messages.length - 1 && msg.role === "assistant"}
+              onRetry={onRetry && msg.role === "assistant" && index === messages.length - 1 ? onRetry : undefined}
             />
           );
         })}
