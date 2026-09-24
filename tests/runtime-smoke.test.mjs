@@ -70,6 +70,19 @@ test("chat route rejects async-only providers", async () => {
   assert.deepEqual(await response.json(), { error: "This provider is not available for instant chat." });
 });
 
+test("chat route recognizes every instant-chat provider before credential validation", async () => {
+  const providers = ["deepseek", "anthropic", "huggingface", "google", "openai", "qwen", "kimi", "sarvam", "openrouter"];
+  for (const provider of providers) {
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ provider, apiKey: "short", messages: [{ role: "user", content: "test" }] }),
+    });
+    assert.equal(response.status, 400, `${provider} should reach credential validation`);
+    assert.deepEqual(await response.json(), { error: "A valid API key is required." });
+  }
+});
+
 test("chat route rejects malformed message parts", async () => {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: "POST",
