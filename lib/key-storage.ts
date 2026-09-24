@@ -5,6 +5,11 @@ export interface ApiKeys {
   deepseek?: string;
   anthropic?: string;
   huggingface?: string;
+  google?: string;
+  openai?: string;
+  qwen?: string;
+  kimi?: string;
+  manus?: string;
 }
 
 const STORAGE_KEY = "omnikey_api_keys_v1";

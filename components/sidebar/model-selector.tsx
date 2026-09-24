@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Bot, Sparkles, BrainCircuit } from "lucide-react";
+import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MODELS_METADATA } from "@/lib/ai-providers";
+import { MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
 import { getKeys, ApiKeys } from "@/lib/key-storage";
 
 // Update ModelOption to match ModelProvider
-export type ModelOption = "deepseek" | "anthropic" | "huggingface";
+export type ModelOption = ModelProvider;
 
 interface ModelSelectorProps {
   selected: ModelOption;
@@ -18,6 +18,11 @@ const MODELS = [
   { id: "deepseek" as const, name: MODELS_METADATA.deepseek.name, description: MODELS_METADATA.deepseek.description, icon: BrainCircuit },
   { id: "anthropic" as const, name: MODELS_METADATA.anthropic.name, description: MODELS_METADATA.anthropic.description, icon: Sparkles },
   { id: "huggingface" as const, name: MODELS_METADATA.huggingface.name, description: MODELS_METADATA.huggingface.description, icon: Bot },
+  { id: "google" as const, name: MODELS_METADATA.google.name, description: MODELS_METADATA.google.description, icon: Globe },
+  { id: "openai" as const, name: MODELS_METADATA.openai.name, description: MODELS_METADATA.openai.description, icon: Cpu },
+  { id: "qwen" as const, name: MODELS_METADATA.qwen.name, description: MODELS_METADATA.qwen.description, icon: Hexagon },
+  { id: "kimi" as const, name: MODELS_METADATA.kimi.name, description: MODELS_METADATA.kimi.description, icon: Zap },
+  { id: "manus" as const, name: MODELS_METADATA.manus.name, description: MODELS_METADATA.manus.description, icon: Star },
 ] as const;
 
 export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {

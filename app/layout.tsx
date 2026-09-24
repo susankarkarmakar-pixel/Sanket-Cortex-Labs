@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Susan AI — Sanket Cortex Labs",
-  description: "Multi-model AI chat interface with BYOK support",
+  title: "Susan AI — Sanket Pixel Technologies",
+  description: "Bring your own API keys to chat with DeepSeek, Claude, and Hugging Face models seamlessly.",
 };
 
 export default function RootLayout({

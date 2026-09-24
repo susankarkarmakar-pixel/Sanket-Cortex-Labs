@@ -1,5 +1,6 @@
 {
-  "name": "myapp",
+  "name": "susan-ai",
+  "description": "Susan AI - An intelligent, multi-model chat interface powered by Sanket Pixel Technologies.",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.60",
+    "@ai-sdk/google": "^4.0.78",
     "@ai-sdk/openai": "^4.0.72",
     "@ai-sdk/react": "^4.0.114",
     "ai": "^7.0.111",

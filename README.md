@@ -1,25 +1,25 @@
 <div align="center">
-  <img src="public/logo.png" alt="Sanket Cortex Labs Logo" width="150" />
+  <img src="public/logo.png" alt="Sanket Pixel Technologies Logo" width="150" />
   <h1>Susan AI</h1>
-  <p><em>by Sanket Cortex Labs</em></p>
+  <p><em>by Sanket Pixel Technologies</em></p>
   <p>"Neural Solutions for a Smarter World"</p>
   <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
 </div>
 
 ## About
-Sanket Cortex Labs is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
+Sanket Pixel Technologies is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
 
 Susan AI is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
-Use DeepSeek, Claude, and Hugging Face models from a single unified interface.
+Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, and Manus models from a single unified interface.
 
 ## Features
 - 🔑 BYOK - Your keys, your data
-- 🔄 Multi-model support (DeepSeek, Claude, Hugging Face)
+- 🔄 Multi-model support (DeepSeek, Claude, Hugging Face, Google Gemini, OpenAI, Qwen, Kimi, Manus)
 - ⚡ Real-time streaming responses
 - 💾 Chat history with local persistence
 - 📝 Markdown & code highlighting
 - 📱 Fully responsive design
-- 🎨 Dark theme with Sanket Cortex Labs branding
+- 🎨 Dark theme with Sanket Pixel Technologies branding
 
 ## Tech Stack
 - Next.js 14 (App Router)

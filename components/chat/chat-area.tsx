@@ -42,13 +42,6 @@ export function ChatArea({
 }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
 
-  const modelNames = {
-    deepseek: "DeepSeek Chat",
-    anthropic: "Claude 3.5 Sonnet",
-    huggingface: "Hugging Face (Hermes)",
-  };
-
-
   // Track the previous model to insert system messages
   const [prevModel, setPrevModel] = useState<ModelOption>(selectedModel);
 
@@ -79,7 +72,7 @@ export function ChatArea({
     // Check for API key before sending
     const keys = getKeys();
     if (!keys[selectedModel as keyof ApiKeys]) {
-      setToastError(`Please add your ${modelNames[selectedModel]} API key in Settings first.`);
+      setToastError(`Please add your ${MODELS_METADATA[selectedModel].name} API key in Settings first.`);
       setTimeout(() => setToastError(null), 5000);
       document.dispatchEvent(new CustomEvent('open-settings'));
       return;

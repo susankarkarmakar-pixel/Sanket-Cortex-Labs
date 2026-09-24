@@ -102,6 +102,51 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             onChange={(val) => handleKeyChange("huggingface", val)}
             isSaved={!!savedKeys.huggingface}
           />
+          <ApiKeyInput
+            label="Google API Key (Gemini)"
+            provider="google"
+            placeholder="AIza..."
+            helpUrl="https://aistudio.google.com/app/apikey"
+            value={keys.google || ""}
+            onChange={(val) => handleKeyChange("google", val)}
+            isSaved={!!savedKeys.google}
+          />
+          <ApiKeyInput
+            label="OpenAI API Key (ChatGPT)"
+            provider="openai"
+            placeholder="sk-..."
+            helpUrl="https://platform.openai.com/api-keys"
+            value={keys.openai || ""}
+            onChange={(val) => handleKeyChange("openai", val)}
+            isSaved={!!savedKeys.openai}
+          />
+          <ApiKeyInput
+            label="Qwen API Key"
+            provider="qwen"
+            placeholder="sk-..."
+            helpUrl="https://dashscope.console.aliyun.com/apiKey"
+            value={keys.qwen || ""}
+            onChange={(val) => handleKeyChange("qwen", val)}
+            isSaved={!!savedKeys.qwen}
+          />
+          <ApiKeyInput
+            label="Kimi API Key"
+            provider="kimi"
+            placeholder="sk-..."
+            helpUrl="https://platform.moonshot.cn/console/api-keys"
+            value={keys.kimi || ""}
+            onChange={(val) => handleKeyChange("kimi", val)}
+            isSaved={!!savedKeys.kimi}
+          />
+          <ApiKeyInput
+            label="Manus API Key"
+            provider="manus"
+            placeholder="sk-..."
+            helpUrl="https://manus.ai"
+            value={keys.manus || ""}
+            onChange={(val) => handleKeyChange("manus", val)}
+            isSaved={!!savedKeys.manus}
+          />
         </div>
 
         {/* Footer */}
