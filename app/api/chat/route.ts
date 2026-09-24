@@ -4,13 +4,17 @@ import { NextResponse } from "next/server";
 
 const MAX_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 100_000;
+const MAX_MESSAGE_PARTS = 24;
 const MAX_BODY_BYTES = 20_000_000;
+const MAX_FILE_DATA_URL_LENGTH = 16_000_000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
+const MAX_RATE_LIMIT_KEYS = 10_000;
 const requestLog = new Map<string, number[]>();
 
 export async function POST(req: Request) {
   try {
+    if (!req.headers.get("content-type")?.toLowerCase().includes("application/json")) return jsonError("Content-Type must be application/json.", 415);
     const contentLength = Number(req.headers.get("content-length") || 0);
     if (contentLength > MAX_BODY_BYTES) return jsonError("Request is too large. Keep attachments under 20 MB total.", 413);
     const clientId = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
@@ -38,13 +42,15 @@ export async function POST(req: Request) {
     const model = getModelConfig(provider, apiKey.trim());
     const result = streamText({ model, messages: modelMessages });
     const anyResult = result as unknown as { toUIMessageStreamResponse?: (options?: { onError?: (error: unknown) => string }) => Response; toDataStreamResponse?: () => Response; toTextStreamResponse?: () => Response };
-    return anyResult.toUIMessageStreamResponse?.({ onError: providerStreamError }) ?? anyResult.toDataStreamResponse?.() ?? anyResult.toTextStreamResponse?.() ?? jsonError("Streaming is unavailable.", 500);
+    const response = anyResult.toUIMessageStreamResponse?.({ onError: providerStreamError }) ?? anyResult.toDataStreamResponse?.() ?? anyResult.toTextStreamResponse?.() ?? jsonError("Streaming is unavailable.", 500);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   } catch (error: unknown) {
-    console.error("API Chat Error:", error);
     const err = error as Record<string, unknown>;
     const status = typeof err.status === "number" ? err.status : 500;
     const rawMessage = typeof err.message === "string" ? err.message : "";
     const message = rawMessage.toLowerCase();
+    if (message.includes("json") || message.includes("unexpected end")) return jsonError("Invalid JSON request body.", 400);
     if (rawMessage.includes("asynchronous") || rawMessage.includes("instant chat")) return jsonError(rawMessage, 400);
     if (status === 401 || status === 403) return jsonError("The API key was rejected by the provider.", 401);
     if (status === 429) return jsonError("The provider rate limit or quota was exceeded.", 429);
@@ -57,11 +63,24 @@ export async function POST(req: Request) {
 function isUIMessage(value: unknown): value is { role: "user" | "assistant"; parts?: unknown[]; content?: unknown } {
   if (!value || typeof value !== "object") return false;
   const message = value as { role?: unknown; parts?: unknown; content?: unknown };
-  return (message.role === "user" || message.role === "assistant") && (Array.isArray(message.parts) || typeof message.content === "string");
+  if (message.role !== "user" && message.role !== "assistant") return false;
+  if (typeof message.content === "string") return message.content.length <= MAX_MESSAGE_LENGTH;
+  return Array.isArray(message.parts) && message.parts.length <= MAX_MESSAGE_PARTS && message.parts.every(isUIPart);
+}
+
+function isUIPart(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const part = value as { type?: unknown; text?: unknown; mediaType?: unknown; filename?: unknown; url?: unknown };
+  if (part.type === "text" || part.type === "reasoning") return typeof part.text === "string" && part.text.length <= MAX_MESSAGE_LENGTH;
+  if (part.type !== "file") return false;
+  if (typeof part.mediaType !== "string" || typeof part.filename !== "string" || typeof part.url !== "string") return false;
+  if (part.filename.length === 0 || part.filename.length > 255 || part.url.length > MAX_FILE_DATA_URL_LENGTH) return false;
+  if (!(part.url.startsWith("data:image/") || part.url.startsWith("data:application/pdf") || part.url.startsWith("data:text/"))) return false;
+  return part.mediaType.startsWith("image/") || ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/json"].includes(part.mediaType);
 }
 
 function jsonError(error: string, status: number) {
-  return NextResponse.json({ error }, { status });
+  return NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 function providerStreamError(error: unknown): string {
@@ -77,6 +96,11 @@ function providerStreamError(error: unknown): string {
 
 function isWithinRateLimit(clientId: string): boolean {
   const now = Date.now();
+  if (requestLog.size >= MAX_RATE_LIMIT_KEYS && !requestLog.has(clientId)) {
+    for (const [key, timestamps] of requestLog) {
+      if (timestamps.every((timestamp) => now - timestamp >= RATE_LIMIT_WINDOW_MS)) requestLog.delete(key);
+    }
+  }
   const recent = (requestLog.get(clientId) || []).filter((timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS);
   if (recent.length >= RATE_LIMIT_MAX_REQUESTS) {
     requestLog.set(clientId, recent);
