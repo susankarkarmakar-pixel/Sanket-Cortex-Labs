@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/susan-logo.svg" alt="Susan AI Logo" width="150" />
+  <img src="public/susan-ai-logo.jpg" alt="Susan AI Logo" width="150" />
   <h1>Susan AI</h1>
   <p><strong>Private multi-model AI chat with Bring Your Own Key support</strong></p>
   <p>An intelligent chat workspace by Sanket Pixel Technologies.</p>
