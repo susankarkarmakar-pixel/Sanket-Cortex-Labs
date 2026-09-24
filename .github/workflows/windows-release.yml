@@ -21,6 +21,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Security audit
+        run: npm audit --audit-level=high
       - name: Build Next standalone server
         run: npm run build
       - name: Build Windows installers

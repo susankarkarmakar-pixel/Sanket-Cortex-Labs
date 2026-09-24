@@ -83,7 +83,7 @@ export default function Home() {
     if (!conversation) return;
     setCurrentConversationId(conversation.id);
     setConversationTitle(conversation.title);
-    setSelectedModel(conversation.model as ModelOption);
+    setSelectedModel(conversation.model === "manus" ? "deepseek" : conversation.model as ModelOption);
     setInput("");
     const restorableMessages = conversation.messages.filter((message): message is Message & { role: "user" | "assistant" } => message.role === "user" || message.role === "assistant");
     setMessages(restorableMessages.map((message) => ({ id: message.id || generateConversationId(), role: message.role, parts: [{ type: "text" as const, text: message.content }] })));

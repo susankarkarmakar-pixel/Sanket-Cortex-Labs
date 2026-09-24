@@ -18,6 +18,8 @@ export async function POST(req: Request) {
     if (!isWithinRateLimit(clientId)) return jsonError("Too many requests. Please wait a moment and try again.", 429);
 
     const body: unknown = await req.json();
+    const parsedBodyBytes = new TextEncoder().encode(JSON.stringify(body)).byteLength;
+    if (parsedBodyBytes > MAX_BODY_BYTES) return jsonError("Request is too large. Keep attachments under 20 MB total.", 413);
     if (!body || typeof body !== "object") return jsonError("Invalid request body.", 400);
     const { messages, provider, apiKey } = body as { messages?: unknown; provider?: unknown; apiKey?: unknown };
     if (typeof provider !== "string" || !PROVIDERS.includes(provider as ModelProvider)) return jsonError("Unsupported model provider.", 400);

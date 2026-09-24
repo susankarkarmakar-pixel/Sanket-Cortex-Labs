@@ -71,8 +71,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </button>
         </div>
         <p className="text-sm text-text-muted mb-6">
-          Keys stay in this browser until you remove them. Each chat request sends the selected key through this app to the chosen provider; Susan AI does not persist it.
+          Keys stay in this browser until you remove them. Each chat request sends the selected key through this app to the chosen provider; Susan AI does not persist it on the server.
         </p>
+
+        <div role="alert" className="mb-5 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-950">
+          <p className="font-semibold">Important: browser-local BYOK storage</p>
+          <p className="mt-1 text-xs leading-relaxed">
+            Your keys are stored in this browser using Base64 encoding. Base64 is <strong>not encryption</strong>. Use provider-restricted keys with minimal permissions, avoid shared devices, and clear your keys before handing this device to someone else.
+          </p>
+        </div>
 
         <div className="mb-5 rounded-xl border border-green-600/20 bg-green-50/60 p-3">
           <h3 className="mb-2 text-sm font-semibold text-text-main">Free-tier options</h3>
@@ -154,15 +161,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             value={keys.kimi || ""}
             onChange={(val) => handleKeyChange("kimi", val)}
             isSaved={!!savedKeys.kimi}
-          />
-          <ApiKeyInput
-            label="Manus API Key"
-            provider="manus"
-            placeholder="sk-..."
-            helpUrl="https://manus.ai"
-            value={keys.manus || ""}
-            onChange={(val) => handleKeyChange("manus", val)}
-            isSaved={!!savedKeys.manus}
           />
           <ApiKeyInput
             label="Sarvam API Key"

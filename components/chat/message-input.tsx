@@ -5,8 +5,10 @@ import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
-const MAX_FILES = 5;
+const MAX_FILES = 3;
+const MAX_TOTAL_FILE_SIZE = 12 * 1024 * 1024;
 const ACCEPTED_FILES = "image/*,.pdf,.txt,.md,.csv,.json";
+const ACCEPTED_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/markdown", "text/csv", "application/json"]);
 
 interface MessageInputProps {
   input: string;
@@ -41,6 +43,15 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop }
       if (file.size > MAX_FILE_SIZE) {
         error = `${file.name} is larger than 4 MB.`;
         continue;
+      }
+      if (!isAcceptedFile(file)) {
+        error = `${file.name} has an unsupported file type.`;
+        continue;
+      }
+      const totalSize = nextFiles.reduce((sum, existing) => sum + existing.size, 0) + file.size;
+      if (totalSize > MAX_TOTAL_FILE_SIZE) {
+        error = "Attachments must be 12 MB or smaller in total.";
+        break;
       }
       if (!nextFiles.some((existing) => existing.name === file.name && existing.size === file.size)) nextFiles.push(file);
     }
@@ -98,8 +109,14 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop }
         </div>
       </form>
       {fileError && <p role="alert" className="mx-auto mt-2 max-w-3xl text-center text-xs text-red-600">{fileError}</p>}
-      <div className="mt-3 text-center text-xs text-text-muted/70">Attach images, PDF, text, CSV, or JSON files up to 4 MB each.</div>
+      <div className="mt-3 text-center text-xs text-text-muted/70">Attach up to 3 images, PDF, text, CSV, or JSON files (4 MB each, 12 MB total).</div>
       <div className="mt-1 text-center text-xs text-text-muted/70">Susan AI may produce inaccurate information about people, places, or facts.</div>
     </div>
   );
+}
+
+function isAcceptedFile(file: File): boolean {
+  if (file.type.startsWith("image/")) return true;
+  if (ACCEPTED_MIME_TYPES.has(file.type)) return true;
+  return /\.(pdf|txt|md|csv|json)$/i.test(file.name);
 }
