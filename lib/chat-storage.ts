@@ -11,7 +11,8 @@ export interface Conversation extends ConversationSummary {
   messages: Message[];
 }
 
-const STORAGE_KEY = "omnikey_conversations_v1";
+const STORAGE_KEY = "susan_conversations_v1";
+const OLD_STORAGE_KEY = "omnikey_conversations_v1";
 const MAX_CONVERSATIONS = 50;
 
 export function generateConversationId(): string {
@@ -90,7 +91,18 @@ export function deleteConversation(id: string): void {
 // Internal helper
 function getAllConversations(): Conversation[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    let stored = localStorage.getItem(STORAGE_KEY);
+
+    // Migration logic for backward compatibility
+    if (!stored) {
+      stored = localStorage.getItem(OLD_STORAGE_KEY);
+      if (stored) {
+        // Migrate to the new key and optionally remove the old one
+        localStorage.setItem(STORAGE_KEY, stored);
+        localStorage.removeItem(OLD_STORAGE_KEY);
+      }
+    }
+
     if (!stored) return [];
     return JSON.parse(stored) as Conversation[];
   } catch (e) {

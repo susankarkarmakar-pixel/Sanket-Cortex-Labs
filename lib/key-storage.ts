@@ -12,7 +12,8 @@ export interface ApiKeys {
   manus?: string;
 }
 
-const STORAGE_KEY = "omnikey_api_keys_v1";
+const STORAGE_KEY = "susan_api_keys_v1";
+const OLD_STORAGE_KEY = "omnikey_api_keys_v1";
 
 export function saveKeys(keys: ApiKeys): void {
   if (typeof window === "undefined") return;
@@ -41,7 +42,16 @@ export function saveKeys(keys: ApiKeys): void {
 export function getKeys(): ApiKeys {
   if (typeof window === "undefined") return {};
 
-  const stored = localStorage.getItem(STORAGE_KEY);
+  let stored = localStorage.getItem(STORAGE_KEY);
+
+  if (!stored) {
+    stored = localStorage.getItem(OLD_STORAGE_KEY);
+    if (stored) {
+      localStorage.setItem(STORAGE_KEY, stored);
+      localStorage.removeItem(OLD_STORAGE_KEY);
+    }
+  }
+
   if (!stored) return {};
 
   try {

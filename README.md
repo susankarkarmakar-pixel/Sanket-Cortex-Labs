@@ -22,18 +22,19 @@ Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, and Manus model
 - 🎨 Dark theme with Sanket Pixel Technologies branding
 
 ## Tech Stack
-- Next.js 14 (App Router)
+- Next.js 16 (App Router)
+- React 19
 - TypeScript
 - Tailwind CSS
-- Vercel AI SDK
+- Vercel AI SDK 7
 - React Markdown
 
 ## Getting Started
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/sanketcortexlabs/omnikey-ai.git
-   cd omnikey-ai
+   git clone https://github.com/susankarkarmakar-pixel/Susan-AI.git
+   cd Susan-AI
    ```
 
 2. **Install dependencies:**
@@ -52,8 +53,8 @@ Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, and Manus model
 
 ## Security
 **Your keys are safe.**
-Susan AI follows a strict BYOK (Bring Your Own Key) policy. API keys for DeepSeek, Anthropic, and Hugging Face are **never sent to or stored on our servers**.
-All keys are obfuscated (Base64) and stored locally entirely within your browser's `localStorage`. (Note: In a true production environment, AES-256 encryption is recommended).
+Susan AI follows a strict BYOK (Bring Your Own Key) policy. API keys for the configured models are **never sent to or stored on our servers**.
+All keys are obfuscated using Base64 encoding and stored entirely within your browser's `localStorage`. Note: Base64 is an encoding mechanism, not true encryption. Avoid accessing the app on shared devices.
 
 ## License
 MIT
