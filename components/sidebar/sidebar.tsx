@@ -60,34 +60,35 @@ export function Sidebar({
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-[280px] bg-brand-blue flex flex-col transition-transform duration-300 ease-in-out border-r border-brand-gray/30",
+        "fixed inset-y-0 left-0 z-50 w-[280px] bg-bg-sidebar flex flex-col transition-transform duration-300 ease-in-out border-r border-border-main/40",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         "lg:static lg:inset-0"
       )}>
         <div className="flex-1 flex flex-col p-4 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="Sanket Cortex Labs Logo" className="w-10 h-10 object-contain" />
-                <h1 className="text-xl font-bold text-brand-white">
-                  Sanket Cortex Labs
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/susan-logo.svg" alt="Susan AI Logo" className="w-8 h-8 object-contain opacity-80" />
+                <h1 className="text-[1.3rem] font-medium text-text-main tracking-tight">
+                  Susan AI
                 </h1>
               </div>
-              <span className="text-xs text-brand-white/40 mt-1 pl-1">
-                Decoding Intelligence
+              <span className="text-[0.65rem] text-text-muted mt-1 pl-1">
+                by Sanket Pixel Technologies
               </span>
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-md hover:bg-brand-gray/50 lg:hidden text-brand-white"
+              className="p-1 rounded-md hover:bg-black/5 lg:hidden text-text-muted hover:text-text-main"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Model Selector */}
-          <div className="mb-4">
+          <div className="mb-6">
             <ModelSelector selected={selectedModel} onSelect={onSelectModel} />
           </div>
 
@@ -97,16 +98,16 @@ export function Sidebar({
               onNewChat();
               if (window.innerWidth < 1024) onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-brand-cyan/10 hover:bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/30 transition-colors mb-6 font-medium"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-surface text-text-main shadow-sm border border-border-main/50 hover:bg-black/5 transition-colors mb-6 text-sm font-medium"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             New Chat
           </button>
 
           {/* Chat History */}
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
             {conversations.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-brand-white/40 text-sm italic">
+              <div className="flex items-center justify-center h-32 text-text-muted text-sm">
                 No conversations yet
               </div>
             ) : (
@@ -125,22 +126,22 @@ export function Sidebar({
                         if (window.innerWidth < 1024) onClose();
                       }}
                       className={cn(
-                        "group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left transition-colors relative overflow-hidden",
-                        isActive ? "bg-brand-gray/80 text-brand-white" : "text-brand-white/70 hover:bg-brand-gray/50 hover:text-brand-white"
+                        "group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors relative overflow-hidden",
+                        isActive ? "bg-surface text-text-main shadow-sm border border-border-main/50" : "text-text-muted hover:bg-black/5 hover:text-text-main border border-transparent"
                       )}
                     >
-                      <span className="shrink-0 text-base">{IconStr}</span>
+                      <span className="shrink-0 text-[13px] opacity-80">{IconStr}</span>
                       <div className="flex-1 min-w-0 flex flex-col">
                         <span className="truncate font-medium leading-tight">{conv.title}</span>
-                        <span className="text-[10px] text-brand-white/40 mt-0.5">{dateStr}</span>
+                        <span className="text-[10px] text-text-muted mt-1 opacity-70">{dateStr}</span>
                       </div>
                       <div
                         role="button"
                         tabIndex={0}
                         onClick={(e) => handleDelete(e, conv.id)}
                         className={cn(
-                          "absolute right-2 p-1.5 rounded-md text-red-400 hover:bg-red-400/20 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100",
-                          isActive && "opacity-100" // Always show on active for touch devices
+                          "absolute right-2 p-1.5 rounded-md text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100",
+                          isActive && "opacity-100 bg-surface" // Always show on active for touch devices
                         )}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -154,16 +155,16 @@ export function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-brand-gray/30 flex flex-col gap-4">
+        <div className="p-4 border-t border-border-main/40 flex flex-col gap-4">
           <button
             onClick={() => document.dispatchEvent(new CustomEvent('open-settings'))}
-            className="flex items-center gap-2 text-brand-white/80 hover:text-brand-white transition-colors p-2 rounded-lg hover:bg-brand-gray/50 w-full"
+            className="flex items-center gap-2 text-text-muted hover:text-text-main transition-colors p-2 rounded-xl hover:bg-black/5 w-full text-sm font-medium"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-4 h-4" />
             <span>Settings</span>
           </button>
-          <div className="text-center text-[10px] text-brand-white/30">
-            © 2026 Sanket Cortex Labs
+          <div className="text-center text-[10px] text-text-muted opacity-60">
+            © 2026 Sanket Pixel Technologies
           </div>
         </div>
       </div>

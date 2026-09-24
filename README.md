@@ -1,12 +1,13 @@
 <div align="center">
-  <img src="public/logo.png" alt="Sanket Cortex Labs Logo" width="150" />
-  <h1>🧠 Sanket Cortex Labs</h1>
+  <img src="public/susan-logo.svg" alt="Susan AI Logo" width="150" />
+  <h1>🧠 Susan AI</h1>
   <p><strong>Neural Solutions for a Smarter World</strong></p>
   <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
+  <p><em>An intelligent multi-model chat interface by Sanket Pixel Technologies</em></p>
 </div>
 
 ## About
-Sanket Cortex Labs is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
+Susan AI is a product of Sanket Pixel Technologies, designed to build intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
 
 It is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
 Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, Manus, and Sarvam models from a single unified interface.
@@ -18,7 +19,7 @@ Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, Manus, and Sarv
 - 💾 Chat history with local persistence
 - 📝 Markdown & code highlighting
 - 📱 Fully responsive design
-- 🎨 Dark theme with Sanket Cortex Labs branding
+- 🎨 Dark theme with Susan AI branding
 
 ## Tech Stack
 - Next.js 16 (App Router)
@@ -52,7 +53,7 @@ Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, Manus, and Sarv
 
 ## Security
 **Your keys are safe.**
-Sanket Cortex Labs follows a strict BYOK (Bring Your Own Key) policy. API keys for the configured models are **never sent to or stored on our servers**.
+Susan AI follows a strict BYOK (Bring Your Own Key) policy. API keys for the configured models are **never sent to or stored on our servers**.
 All keys are obfuscated using Base64 encoding and stored entirely within your browser's `localStorage`. Note: Base64 is an encoding mechanism, not true encryption. Avoid accessing the app on shared devices.
 
 ## License

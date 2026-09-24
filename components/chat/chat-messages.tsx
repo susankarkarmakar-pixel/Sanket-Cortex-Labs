@@ -29,9 +29,9 @@ export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
   if (messages.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center justify-center text-brand-white/30 gap-4 animate-in fade-in duration-500">
-          <Brain className="w-16 h-16 opacity-50" />
-          <p className="text-lg">Start a conversation with Susan AI</p>
+        <div className="flex flex-col items-center justify-center text-text-muted/40 gap-4 animate-in fade-in duration-500">
+          <Brain className="w-12 h-12" />
+          <p className="text-lg font-medium text-text-muted">Start a conversation with Susan AI</p>
         </div>
       </div>
     );
@@ -42,12 +42,12 @@ export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
       ref={scrollRef}
       className="flex-1 overflow-y-auto p-4 custom-scrollbar scroll-smooth"
     >
-      <div className="max-w-4xl mx-auto flex flex-col w-full pb-4">
+      <div className="max-w-3xl mx-auto flex flex-col w-full pb-4">
         {messages.map((msg, index) => {
           if (msg.role === "system") {
             return (
-              <div key={msg.id || index} className="w-full flex justify-center my-4 animate-in fade-in">
-                <div className="bg-brand-gray/30 text-brand-white/50 text-xs px-3 py-1 rounded-full border border-brand-gray/50">
+              <div key={msg.id || index} className="w-full flex justify-center my-6 animate-in fade-in">
+                <div className="bg-black/5 text-text-muted text-xs px-4 py-1.5 rounded-full font-medium">
                   {msg.content}
                 </div>
               </div>

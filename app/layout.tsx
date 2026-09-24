@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sanket Cortex Labs",
+  title: "Susan AI — Sanket Pixel Technologies",
   description: "Bring your own API keys to chat with DeepSeek, Claude, and Hugging Face models seamlessly.",
 };
 
@@ -25,10 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="icon" href="/susan-logo.svg" type="image/svg+xml" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-brand-blue text-brand-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-bg-main text-text-main`}
       >
         {children}
       </body>

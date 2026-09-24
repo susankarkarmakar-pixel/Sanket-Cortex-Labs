@@ -82,25 +82,28 @@ export function ChatArea({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-brand-blue relative overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-bg-main relative overflow-hidden">
       {/* Top Bar */}
-      <header className="h-16 flex items-center px-4 border-b border-brand-gray/30 gap-4 shrink-0 bg-brand-blue/90 backdrop-blur-sm z-20">
+      <header className="h-14 flex items-center px-4 gap-4 shrink-0 bg-bg-main/90 backdrop-blur-sm z-20">
         <button
           onClick={onOpenSidebar}
-          className="lg:hidden p-2 -ml-2 text-brand-white/80 hover:text-brand-white rounded-lg hover:bg-brand-gray/50"
+          className="lg:hidden p-2 -ml-2 text-text-muted hover:text-text-main rounded-lg hover:bg-black/5"
         >
           <Menu className="w-6 h-6" />
         </button>
-        <div className="flex-1 min-w-0 flex items-center">
-          {conversationTitle && (
-            <div className="truncate font-medium text-brand-white mr-4 max-w-[200px] md:max-w-[400px]">
-              {conversationTitle}
-            </div>
-          )}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-brand-gray/30 border border-brand-gray/50 font-medium text-xs text-brand-white">
-            <span className="mr-0.5">{MODELS_METADATA[selectedModel].icon}</span>
-            {MODELS_METADATA[selectedModel].name}
-            <div className={`w-1.5 h-1.5 rounded-full ml-1.5 ${MODELS_METADATA[selectedModel].color.replace('text-', 'bg-')}`} />
+        <div className="flex-1 min-w-0 flex items-center justify-center">
+          {/* Claude typically keeps the top bar very clean. We can show model selection here or title. */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-lg text-sm text-text-muted hover:bg-black/5 cursor-default transition-colors">
+            {conversationTitle ? (
+              <span className="truncate font-medium max-w-[200px] md:max-w-[400px]">
+                {conversationTitle}
+              </span>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span>{MODELS_METADATA[selectedModel].icon}</span>
+                <span className="font-medium">{MODELS_METADATA[selectedModel].name}</span>
+              </div>
+            )}
           </div>
         </div>
       </header>

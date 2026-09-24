@@ -2,26 +2,38 @@
 @import "highlight.js/styles/github-dark.css";
 
 :root {
-  /* Brand Colors */
-  --deep-cortex-blue: #0A1F44;
-  --neural-cyan: #00D4FF;
-  --synapse-purple: #7C3AED;
-  --clean-white: #F8FAFC;
-  --graphite-gray: #1E293B;
+  /* Claude-like Brand Colors */
+  --bg-main: #F4F3ED; /* Light beige background */
+  --bg-sidebar: #E9E6D9; /* Slightly darker beige for sidebar */
+  --text-main: #1D1D1B; /* Very dark grey/black for text */
+  --text-muted: #585754; /* Muted text */
+  --accent-color: #D97757; /* Claude's terra-cotta/orange accent */
+  --accent-hover: #C56345;
+  --border-color: #D3D0C5;
+  --surface-color: #FFFFFF; /* White for message bubbles or inputs */
 
-  /* Default theme (Dark Theme as requested) */
-  --background: var(--deep-cortex-blue);
-  --foreground: var(--clean-white);
+  /* Default theme */
+  --background: var(--bg-main);
+  --foreground: var(--text-main);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-brand-blue: var(--deep-cortex-blue);
-  --color-brand-cyan: var(--neural-cyan);
-  --color-brand-purple: var(--synapse-purple);
-  --color-brand-white: var(--clean-white);
-  --color-brand-gray: var(--graphite-gray);
+  --color-brand-blue: var(--bg-main); /* Repurposing for main bg */
+  --color-brand-cyan: var(--accent-color);
+  --color-brand-purple: var(--accent-hover);
+  --color-brand-white: var(--text-main); /* Repurposing white for main text to avoid mass class rename immediately */
+  --color-brand-gray: var(--bg-sidebar); /* Repurposing gray for sidebar */
+
+  --color-bg-main: var(--bg-main);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent-color);
+  --color-surface: var(--surface-color);
+  --color-border-main: var(--border-color);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

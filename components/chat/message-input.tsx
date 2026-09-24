@@ -42,19 +42,19 @@ export function MessageInput({
   const isEmpty = input.trim().length === 0;
 
   return (
-    <div className="p-4 bg-brand-blue/50 backdrop-blur-md border-t border-brand-gray/30 w-full relative z-10">
+    <div className="p-4 bg-bg-main w-full relative z-10">
       <form
         ref={formRef}
         onSubmit={onSubmit}
-        className="max-w-4xl mx-auto relative flex items-end gap-2 bg-brand-gray/30 border border-brand-gray/50 rounded-xl p-2 focus-within:ring-1 focus-within:ring-brand-cyan/50 focus-within:border-brand-cyan/50 transition-all shadow-lg"
+        className="max-w-3xl mx-auto relative flex items-end gap-2 bg-surface rounded-2xl p-2 shadow-sm border border-border-main/50 focus-within:border-border-main focus-within:ring-1 focus-within:ring-border-main/50 transition-all"
       >
         <textarea
           ref={textareaRef}
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message... (Shift+Enter for new line)"
-          className="flex-1 bg-transparent resize-none outline-none text-brand-white placeholder:text-brand-white/40 px-2 py-2.5 max-h-[120px] min-h-[44px] overflow-y-auto"
+          placeholder="How can I help you today?"
+          className="flex-1 bg-transparent resize-none outline-none text-text-main placeholder:text-text-muted/60 px-3 py-3 max-h-[200px] min-h-[48px] overflow-y-auto font-sans"
           rows={1}
         />
 
@@ -62,26 +62,26 @@ export function MessageInput({
           <button
             type="button"
             onClick={stop}
-            className="p-2.5 rounded-lg transition-colors mb-0.5 shrink-0 flex items-center justify-center bg-brand-gray/80 text-brand-white hover:bg-brand-gray shadow-sm"
+            className="p-2.5 rounded-xl transition-colors mb-1 shrink-0 flex items-center justify-center bg-text-main text-surface hover:opacity-80"
           >
-            <Square className="w-5 h-5 fill-current" />
+            <Square className="w-4 h-4 fill-current" />
           </button>
         ) : (
           <button
             type="submit"
             disabled={isEmpty}
             className={cn(
-              "p-2.5 rounded-lg transition-colors mb-0.5 shrink-0 flex items-center justify-center",
+              "p-2.5 rounded-xl transition-colors mb-1 shrink-0 flex items-center justify-center",
               isEmpty
-                ? "bg-brand-gray/50 text-brand-white/30 cursor-not-allowed"
-                : "bg-brand-cyan text-brand-blue hover:bg-brand-cyan/90 shadow-sm"
+                ? "bg-black/5 text-text-muted/40 cursor-not-allowed"
+                : "bg-accent text-white hover:opacity-90 shadow-sm"
             )}
           >
-            <ArrowUp className="w-5 h-5" />
+            <ArrowUp className="w-4 h-4" />
           </button>
         )}
       </form>
-      <div className="text-center mt-2 text-xs text-brand-white/30">
+      <div className="text-center mt-3 text-xs text-text-muted/70">
         Susan AI may produce inaccurate information about people, places, or facts.
       </div>
     </div>

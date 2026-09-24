@@ -20,65 +20,68 @@ export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps
   return (
     <div
       className={cn(
-        "flex w-full mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
+        "flex w-full mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "max-w-[80%] md:max-w-[70%] rounded-2xl px-4 py-3 flex items-start gap-3 relative group",
+          "max-w-[85%] md:max-w-[80%] flex items-start gap-4 relative group",
           isUser
-            ? "bg-brand-purple text-brand-white rounded-br-sm"
-            : "bg-brand-gray text-brand-white/90 rounded-bl-sm border border-brand-gray/50 shadow-sm"
+            ? "bg-black/5 rounded-2xl px-5 py-3.5 text-text-main shadow-sm"
+            : "px-2 py-1 text-text-main"
         )}
       >
         {!isUser && (
-          <div className="shrink-0 text-xl leading-none select-none mt-0.5">
-            🧠
+          <div className="shrink-0 w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-bold text-sm shadow-sm mt-0.5">
+            S
           </div>
         )}
 
-        <div className="flex-1 whitespace-pre-wrap break-words leading-relaxed text-sm overflow-hidden">
+        <div className={cn(
+          "flex-1 whitespace-pre-wrap break-words leading-relaxed text-[15px] overflow-hidden",
+          !isUser && "pt-1"
+        )}>
           {isUser ? (
             <>
               {content}
               {isStreaming && (
-                <span className="inline-block w-2 h-4 ml-1 bg-brand-white/80 animate-pulse align-middle" />
+                <span className="inline-block w-2 h-4 ml-1 bg-text-main/50 animate-pulse align-middle" />
               )}
             </>
           ) : (
-            <div className="markdown-prose w-full overflow-hidden">
+            <div className="markdown-prose w-full overflow-hidden text-text-main">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeHighlight]}
                 components={{
-                  h1: ({ children }) => <h1 className="text-brand-cyan text-2xl font-bold mb-4 mt-6">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-brand-cyan text-xl font-bold mb-3 mt-5">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-brand-cyan text-lg font-bold mb-3 mt-4">{children}</h3>,
-                  h4: ({ children }) => <h4 className="text-brand-cyan text-base font-bold mb-2 mt-4">{children}</h4>,
-                  p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+                  h1: ({ children }) => <h1 className="text-text-main text-2xl font-semibold mb-4 mt-6">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-text-main text-xl font-semibold mb-3 mt-5">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-text-main text-lg font-semibold mb-3 mt-4">{children}</h3>,
+                  h4: ({ children }) => <h4 className="text-text-main text-base font-semibold mb-2 mt-4">{children}</h4>,
+                  p: ({ children }) => <p className="mb-4 last:mb-0 leading-7">{children}</p>,
                   a: ({ href, children }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-cyan hover:underline underline-offset-2">
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline underline-offset-2">
                       {children}
                     </a>
                   ),
-                  ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 space-y-1">{children}</ol>,
-                  li: ({ children }) => <li className="marker:text-brand-white/50">{children}</li>,
+                  ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-2">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 space-y-2">{children}</ol>,
+                  li: ({ children }) => <li className="marker:text-text-muted">{children}</li>,
                   blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-brand-purple pl-4 italic text-brand-white/80 mb-4 bg-brand-purple/10 py-2 rounded-r">
+                    <blockquote className="border-l-4 border-border-main pl-4 italic text-text-muted mb-4 py-1">
                       {children}
                     </blockquote>
                   ),
                   table: ({ children }) => (
-                    <div className="overflow-x-auto mb-4 border border-brand-gray/50 rounded-lg">
-                      <table className="w-full text-left border-collapse bg-brand-gray/20">
+                    <div className="overflow-x-auto mb-4 border border-border-main rounded-lg">
+                      <table className="w-full text-left border-collapse bg-surface">
                         {children}
                       </table>
                     </div>
                   ),
-                  th: ({ children }) => <th className="border-b border-brand-gray/50 px-4 py-2 font-medium bg-brand-gray/50">{children}</th>,
-                  td: ({ children }) => <td className="border-b border-brand-gray/50 px-4 py-2 last:border-b-0">{children}</td>,
+                  th: ({ children }) => <th className="border-b border-border-main px-4 py-2 font-medium bg-black/5 text-text-muted">{children}</th>,
+                  td: ({ children }) => <td className="border-b border-border-main px-4 py-2 last:border-b-0">{children}</td>,
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   code: ({ inline, className, children, node, ...props }: any) => {
                     const match = /language-(\w+)/.exec(className || "");
@@ -107,7 +110,7 @@ export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps
                     }
 
                     return (
-                      <code className="bg-brand-gray/60 text-brand-cyan font-mono text-[0.9em] px-1.5 py-0.5 rounded" {...props}>
+                      <code className="bg-black/5 text-accent font-mono text-[0.9em] px-1.5 py-0.5 rounded" {...props}>
                         {children}
                       </code>
                     );
@@ -117,7 +120,7 @@ export function MessageBubble({ role, content, isStreaming }: MessageBubbleProps
                 {content}
               </ReactMarkdown>
               {isStreaming && (
-                <span className="inline-block w-2 h-4 ml-1 bg-brand-white/80 animate-pulse align-middle" />
+                <span className="inline-block w-2 h-4 ml-1 bg-text-main/50 animate-pulse align-middle" />
               )}
             </div>
           )}
