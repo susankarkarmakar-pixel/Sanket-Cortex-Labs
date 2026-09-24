@@ -69,13 +69,13 @@ export function Sidebar({
           <div className="flex items-center justify-between mb-6">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <img src="/susan-logo.svg" alt="Susan AI Logo" className="w-10 h-10 object-contain" />
+                <img src="/logo.png" alt="Sanket Cortex Labs Logo" className="w-10 h-10 object-contain" />
                 <h1 className="text-xl font-bold text-brand-white">
-                  Susan AI
+                  Sanket Cortex Labs
                 </h1>
               </div>
               <span className="text-xs text-brand-white/40 mt-1 pl-1">
-                by Sanket Pixel Technologies
+                Decoding Intelligence
               </span>
             </div>
             <button
@@ -163,7 +163,7 @@ export function Sidebar({
             <span>Settings</span>
           </button>
           <div className="text-center text-[10px] text-brand-white/30">
-            © 2026 Sanket Pixel Technologies
+            © 2026 Sanket Cortex Labs
           </div>
         </div>
       </div>
