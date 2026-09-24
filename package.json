@@ -3,11 +3,14 @@
   "description": "Susan AI - An intelligent, multi-model chat interface by Sanket Pixel Technologies.",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "desktop": "electron .",
+    "desktop:build:win": "npm run build && electron-builder --win nsis portable"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.60",
@@ -29,13 +32,25 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "^16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "build": {
+    "appId": "com.sanketpixel.susanai",
+    "productName": "Susan AI",
+    "artifactName": "Susan-AI-${version}-${os}-${arch}.${ext}",
+    "directories": { "output": "release" },
+    "files": ["electron/**/*", "public/**/*", ".next/standalone/**/*", ".next/static/**/*"],
+    "extraResources": [{ "from": ".next/standalone", "to": "app/.next/standalone" }, { "from": ".next/static", "to": "app/.next/static" }, { "from": "public", "to": "app/public" }],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "perMachine": false },
+    "publish": null
   }
 }
