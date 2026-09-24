@@ -11,6 +11,21 @@ Susan AI is a modern personal AI assistant that brings multiple leading language
 
 Susan AI provides one streamlined chat interface for DeepSeek, Claude, Hugging Face, Gemini, OpenAI, Qwen, Kimi, Manus, Sarvam, and OpenRouter integrations. Users can select the provider and model that best fit each task, bring their own credentials, and switch between supported services without leaving the workspace. Conversations are persisted locally in the browser, and users can export or import their chat history as JSON. The application is suitable for personal use, experimentation with multiple AI providers, and self-managed deployments where privacy and configuration flexibility matter.
 
+## Demo & screenshot gallery
+
+The screenshot below shows the Susan AI workspace in action, including the model selector, conversation sidebar, chat composer, file attachment control, and conversation management actions.
+
+<div align="center">
+  <img src="docs/screenshots/susan-ai-workspace.webp" alt="Susan AI chat workspace showing the model selector, conversation sidebar, and message composer" width="100%" />
+</div>
+
+### Featured workflow elements
+
+- **Multi-model workspace:** Choose a supported provider and model from the selector at the top of the chat area.
+- **Conversation management:** Start a new chat, export or import conversations, and clear local history from the sidebar.
+- **Rich chat composer:** Send prompts, attach supported files, and receive streaming responses in one focused interface.
+- **Responsive experience:** Use the same workspace across desktop and mobile layouts.
+
 ## Features
 
 - Browser-local BYOK storage with clear-key controls.
