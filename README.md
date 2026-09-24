@@ -85,6 +85,7 @@ The temporary sandbox preview is only for testing and is not a permanent product
 
 ```bash
 npm run lint
+npm test
 npm run build
 npm start
 ```

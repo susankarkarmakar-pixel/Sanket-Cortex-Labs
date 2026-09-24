@@ -29,6 +29,8 @@ jobs:
         run: npm audit --audit-level=high
       - name: Build Next standalone server
         run: npm run build
+      - name: Runtime smoke tests
+        run: npm test
       - name: Build Windows installers
         run: npm run desktop:build:win
       - name: Upload workflow artifacts
