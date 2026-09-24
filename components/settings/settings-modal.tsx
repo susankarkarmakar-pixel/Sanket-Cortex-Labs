@@ -60,7 +60,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-brand-white flex items-center gap-2">
-            ⚙️ API Configuration
+            ⚙️ Susan AI Configuration
           </h2>
           <button
             onClick={onClose}
@@ -166,9 +166,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </button>
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 text-xs text-brand-white/40">
-            <Lock className="w-3 h-3" />
-            <span>Keys are encrypted and stored in your browser&apos;s localStorage only</span>
+          <div className="flex items-center justify-center gap-1.5 text-xs text-brand-white/40 text-center">
+            <Lock className="w-4 h-4 shrink-0" />
+            <span>🔒 Your keys are stored locally in your browser. Sanket Pixel Technologies never accesses your API keys.</span>
           </div>
         </div>
 

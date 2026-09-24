@@ -71,10 +71,10 @@ export function Sidebar({
               <div className="flex items-center gap-2">
                 <img src="/logo.png" alt="Sanket Pixel Technologies Logo" className="w-8 h-8 object-contain" />
                 <h1 className="text-xl font-bold text-brand-white">
-                  Susan AI
+                  🧠 Susan AI
                 </h1>
               </div>
-              <span className="text-xs text-brand-gray/70 mt-1 pl-1 opacity-70">
+              <span className="text-xs text-brand-white/40 mt-1 pl-1">
                 by Sanket Pixel Technologies
               </span>
             </div>
@@ -154,7 +154,7 @@ export function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-brand-gray/30">
+        <div className="p-4 border-t border-brand-gray/30 flex flex-col gap-4">
           <button
             onClick={() => document.dispatchEvent(new CustomEvent('open-settings'))}
             className="flex items-center gap-2 text-brand-white/80 hover:text-brand-white transition-colors p-2 rounded-lg hover:bg-brand-gray/50 w-full"
@@ -162,6 +162,9 @@ export function Sidebar({
             <Settings className="w-5 h-5" />
             <span>Settings</span>
           </button>
+          <div className="text-center text-[10px] text-brand-white/30">
+            © 2026 Sanket Pixel Technologies
+          </div>
         </div>
       </div>
     </>

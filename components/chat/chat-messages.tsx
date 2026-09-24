@@ -31,7 +31,7 @@ export function ChatMessages({ messages, isStreaming }: ChatMessagesProps) {
       <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center text-brand-white/30 gap-4 animate-in fade-in duration-500">
           <Brain className="w-16 h-16 opacity-50" />
-          <p className="text-lg">Start a conversation with any AI model</p>
+          <p className="text-lg">Start a conversation with Susan AI</p>
         </div>
       </div>
     );
