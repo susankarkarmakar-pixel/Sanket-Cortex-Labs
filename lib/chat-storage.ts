@@ -14,6 +14,11 @@ export interface Conversation extends ConversationSummary {
 const STORAGE_KEY = "susan_conversations_v1";
 const OLD_STORAGE_KEY = "omnikey_conversations_v1";
 const MAX_CONVERSATIONS = 50;
+const MAX_MESSAGES = 100;
+const MAX_MESSAGE_LENGTH = 100_000;
+const MAX_TITLE_LENGTH = 200;
+const MAX_IMPORT_BYTES = 10_000_000;
+const CURRENT_SCHEMA_VERSION = 1;
 
 export function generateConversationId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -69,14 +74,20 @@ export function clearConversations(): void {
 }
 
 export function exportConversations(): string {
-  return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), conversations: getAllConversations() }, null, 2);
+  return JSON.stringify({ schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: new Date().toISOString(), conversations: getAllConversations() }, null, 2);
 }
 
 export function importConversations(json: string): { imported: number; skipped: number } {
   if (typeof window === "undefined") return { imported: 0, skipped: 0 };
+  if (new TextEncoder().encode(json).byteLength > MAX_IMPORT_BYTES) throw new Error("This conversation export is too large to import safely.");
   const parsed: unknown = JSON.parse(json);
   const input = Array.isArray(parsed) ? parsed : (parsed as { conversations?: unknown })?.conversations;
   if (!Array.isArray(input)) throw new Error("The selected file does not contain a conversation export.");
+
+  const schemaVersion = Array.isArray(parsed) ? 0 : (parsed as { schemaVersion?: unknown; version?: unknown }).schemaVersion ?? (parsed as { version?: unknown }).version;
+  if (schemaVersion !== undefined && schemaVersion !== 0 && schemaVersion !== CURRENT_SCHEMA_VERSION) {
+    throw new Error(`Unsupported conversation export version: ${String(schemaVersion)}.`);
+  }
 
   const existing = getAllConversations();
   let imported = 0;
@@ -127,5 +138,21 @@ function getAllConversations(): Conversation[] {
 function isConversation(value: unknown): value is Conversation {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<Conversation>;
-  return typeof candidate.id === "string" && typeof candidate.title === "string" && typeof candidate.date === "number" && typeof candidate.model === "string" && Array.isArray(candidate.messages);
+  return Boolean(
+    typeof candidate.id === "string" && candidate.id.length > 0 && candidate.id.length <= 200 &&
+    typeof candidate.title === "string" && candidate.title.length <= MAX_TITLE_LENGTH &&
+    typeof candidate.date === "number" && Number.isFinite(candidate.date) && candidate.date > 0 &&
+    typeof candidate.model === "string" && candidate.model.length > 0 && candidate.model.length <= 100 &&
+    Array.isArray(candidate.messages) && candidate.messages.length <= MAX_MESSAGES &&
+    candidate.messages.every(isMessage)
+  );
+}
+
+function isMessage(value: unknown): value is Message {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Message>;
+  return Boolean(
+    (candidate.role === "user" || candidate.role === "assistant" || candidate.role === "system" || candidate.role === "data") &&
+    typeof candidate.content === "string" && candidate.content.length <= MAX_MESSAGE_LENGTH
+  );
 }
