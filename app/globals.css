@@ -2,15 +2,15 @@
 @import "highlight.js/styles/github-dark.css";
 
 :root {
-  /* Claude-like Brand Colors */
-  --bg-main: #F4F3ED; /* Light beige background */
-  --bg-sidebar: #E9E6D9; /* Slightly darker beige for sidebar */
-  --text-main: #1D1D1B; /* Very dark grey/black for text */
-  --text-muted: #585754; /* Muted text */
-  --accent-color: #D97757; /* Claude's terra-cotta/orange accent */
-  --accent-hover: #C56345;
-  --border-color: #D3D0C5;
-  --surface-color: #FFFFFF; /* White for message bubbles or inputs */
+  /* Susan AI brand palette: warm cream surfaces with the logo's cocoa-brown accent. */
+  --bg-main: #F8F6F0;
+  --bg-sidebar: #EEE9DE;
+  --text-main: #2A211D;
+  --text-muted: #665B54;
+  --accent-color: #8B4F33;
+  --accent-hover: #6F3D28;
+  --border-color: #D8CFC3;
+  --surface-color: #FFFFFF;
 
   /* Default theme */
   --background: var(--bg-main);
@@ -20,11 +20,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-brand-blue: var(--bg-main); /* Repurposing for main bg */
+  /* Legacy aliases retained for existing utility classes. */
+  --color-brand-blue: var(--bg-main);
   --color-brand-cyan: var(--accent-color);
   --color-brand-purple: var(--accent-hover);
-  --color-brand-white: var(--text-main); /* Repurposing white for main text to avoid mass class rename immediately */
-  --color-brand-gray: var(--bg-sidebar); /* Repurposing gray for sidebar */
+  --color-brand-brown: var(--accent-color);
+  --color-brand-brown-dark: var(--accent-hover);
+  --color-brand-white: var(--text-main);
+  --color-brand-gray: var(--bg-sidebar);
 
   --color-bg-main: var(--bg-main);
   --color-bg-sidebar: var(--bg-sidebar);
