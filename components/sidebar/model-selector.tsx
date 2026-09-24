@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Shield } from "lucide-react";
+import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Shield, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
+import { INSTANT_CHAT_PROVIDERS, MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
 import { getKeys, ApiKeys } from "@/lib/key-storage";
 
 // Update ModelOption to match ModelProvider
@@ -14,17 +14,24 @@ interface ModelSelectorProps {
   onSelect: (model: ModelOption) => void;
 }
 
-const MODELS = [
-  { id: "deepseek" as const, name: MODELS_METADATA.deepseek.name, description: MODELS_METADATA.deepseek.description, icon: BrainCircuit },
-  { id: "anthropic" as const, name: MODELS_METADATA.anthropic.name, description: MODELS_METADATA.anthropic.description, icon: Sparkles },
-  { id: "huggingface" as const, name: MODELS_METADATA.huggingface.name, description: MODELS_METADATA.huggingface.description, icon: Bot },
-  { id: "google" as const, name: MODELS_METADATA.google.name, description: MODELS_METADATA.google.description, icon: Globe },
-  { id: "openai" as const, name: MODELS_METADATA.openai.name, description: MODELS_METADATA.openai.description, icon: Cpu },
-  { id: "qwen" as const, name: MODELS_METADATA.qwen.name, description: MODELS_METADATA.qwen.description, icon: Hexagon },
-  { id: "kimi" as const, name: MODELS_METADATA.kimi.name, description: MODELS_METADATA.kimi.description, icon: Zap },
-  { id: "sarvam" as const, name: MODELS_METADATA.sarvam.name, description: MODELS_METADATA.sarvam.description, icon: Shield },
-  { id: "openrouter" as const, name: MODELS_METADATA.openrouter.name, description: MODELS_METADATA.openrouter.description, icon: Globe },
-] as const;
+const MODEL_ICONS: Record<Exclude<ModelProvider, "manus">, LucideIcon> = {
+  deepseek: BrainCircuit,
+  anthropic: Sparkles,
+  huggingface: Bot,
+  google: Globe,
+  openai: Cpu,
+  qwen: Hexagon,
+  kimi: Zap,
+  sarvam: Shield,
+  openrouter: Globe,
+};
+
+const MODELS = INSTANT_CHAT_PROVIDERS.map((id) => ({
+  id,
+  name: MODELS_METADATA[id].name,
+  description: MODELS_METADATA[id].description,
+  icon: MODEL_ICONS[id],
+}));
 
 export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);

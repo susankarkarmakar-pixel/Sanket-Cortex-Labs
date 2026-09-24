@@ -1,8 +1,7 @@
 import { convertToModelMessages, streamText } from "ai";
-import { getModelConfig, ModelProvider } from "@/lib/ai-providers";
+import { getModelConfig, isInstantChatProvider } from "@/lib/ai-providers";
 import { NextResponse } from "next/server";
 
-const PROVIDERS: ModelProvider[] = ["deepseek", "anthropic", "huggingface", "google", "openai", "qwen", "kimi", "manus", "sarvam", "openrouter"];
 const MAX_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 100_000;
 const MAX_BODY_BYTES = 20_000_000;
@@ -22,7 +21,7 @@ export async function POST(req: Request) {
     if (parsedBodyBytes > MAX_BODY_BYTES) return jsonError("Request is too large. Keep attachments under 20 MB total.", 413);
     if (!body || typeof body !== "object") return jsonError("Invalid request body.", 400);
     const { messages, provider, apiKey } = body as { messages?: unknown; provider?: unknown; apiKey?: unknown };
-    if (typeof provider !== "string" || !PROVIDERS.includes(provider as ModelProvider)) return jsonError("Unsupported model provider.", 400);
+    if (typeof provider !== "string" || !isInstantChatProvider(provider)) return jsonError("This provider is not available for instant chat.", 400);
     if (typeof apiKey !== "string" || apiKey.trim().length < 8 || apiKey.length > 500) return jsonError("A valid API key is required.", 400);
     if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return jsonError("Messages must contain between 1 and 100 items.", 400);
 
@@ -36,7 +35,7 @@ export async function POST(req: Request) {
           .map((message) => ({ role: message.role, content: message.content as string }));
     if (modelMessages.length === 0) return jsonError("No valid message content found.", 400);
 
-    const model = getModelConfig(provider as ModelProvider, apiKey.trim());
+    const model = getModelConfig(provider, apiKey.trim());
     const result = streamText({ model, messages: modelMessages });
     const anyResult = result as unknown as { toUIMessageStreamResponse?: (options?: { onError?: (error: unknown) => string }) => Response; toDataStreamResponse?: () => Response; toTextStreamResponse?: () => Response };
     return anyResult.toUIMessageStreamResponse?.({ onError: providerStreamError }) ?? anyResult.toDataStreamResponse?.() ?? anyResult.toTextStreamResponse?.() ?? jsonError("Streaming is unavailable.", 500);
