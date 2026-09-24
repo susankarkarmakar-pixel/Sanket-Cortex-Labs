@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Star } from "lucide-react";
+import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Star, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
 import { getKeys, ApiKeys } from "@/lib/key-storage";
@@ -23,6 +23,7 @@ const MODELS = [
   { id: "qwen" as const, name: MODELS_METADATA.qwen.name, description: MODELS_METADATA.qwen.description, icon: Hexagon },
   { id: "kimi" as const, name: MODELS_METADATA.kimi.name, description: MODELS_METADATA.kimi.description, icon: Zap },
   { id: "manus" as const, name: MODELS_METADATA.manus.name, description: MODELS_METADATA.manus.description, icon: Star },
+  { id: "sarvam" as const, name: MODELS_METADATA.sarvam.name, description: MODELS_METADATA.sarvam.description, icon: Shield },
 ] as const;
 
 export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {

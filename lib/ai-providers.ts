@@ -3,7 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LanguageModel } from "ai";
 
-export type ModelProvider = "deepseek" | "anthropic" | "huggingface" | "google" | "openai" | "qwen" | "kimi" | "manus";
+export type ModelProvider = "deepseek" | "anthropic" | "huggingface" | "google" | "openai" | "qwen" | "kimi" | "manus" | "sarvam";
 
 export const PROVIDER_DISPLAY_NAMES: Record<ModelProvider, string> = {
   deepseek: "DeepSeek Chat",
@@ -14,6 +14,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ModelProvider, string> = {
   qwen: "Qwen Max",
   kimi: "Kimi (Moonshot)",
   manus: "Manus",
+  sarvam: "Sarvam",
 };
 
 export const MODELS_METADATA: Record<ModelProvider, { name: string; description: string; color: string; icon: string }> = {
@@ -64,6 +65,12 @@ export const MODELS_METADATA: Record<ModelProvider, { name: string; description:
     description: "Manus AI Model",
     color: "text-indigo-400",
     icon: "M",
+  },
+  sarvam: {
+    name: "Sarvam",
+    description: "Sarvam AI Model",
+    color: "text-teal-400",
+    icon: "S",
   },
 };
 
@@ -127,6 +134,13 @@ export function getModelConfig(
         apiKey: apiKey,
       });
       return manus("manus-model"); // Adjust if actual model name is different
+    }
+    case "sarvam": {
+      const sarvam = createOpenAI({
+        baseURL: "https://api.sarvam.ai/v1", // Using standard OpenAI compatible endpoint if available, or Sarvam specific endpoint. Note: Sarvam's completions endpoint might vary.
+        apiKey: apiKey,
+      });
+      return sarvam("sarvam-1"); // Adjust if the model name is different
     }
     default:
       throw new Error(`Unsupported provider: ${provider}`);

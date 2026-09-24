@@ -10,6 +10,7 @@ export interface ApiKeys {
   qwen?: string;
   kimi?: string;
   manus?: string;
+  sarvam?: string;
 }
 
 const STORAGE_KEY = "susan_api_keys_v1";

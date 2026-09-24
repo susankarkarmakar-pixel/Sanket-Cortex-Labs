@@ -60,7 +60,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-brand-white flex items-center gap-2">
-            ⚙️ Susan AI Configuration
+            ⚙️ Sanket Cortex Labs Configuration
           </h2>
           <button
             onClick={onClose}
@@ -147,6 +147,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             onChange={(val) => handleKeyChange("manus", val)}
             isSaved={!!savedKeys.manus}
           />
+          <ApiKeyInput
+            label="Sarvam API Key"
+            provider="sarvam"
+            placeholder="sk-..."
+            helpUrl="https://sarvam.ai"
+            value={keys.sarvam || ""}
+            onChange={(val) => handleKeyChange("sarvam", val)}
+            isSaved={!!savedKeys.sarvam}
+          />
         </div>
 
         {/* Footer */}
@@ -168,7 +177,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-brand-white/40 text-center">
             <Lock className="w-4 h-4 shrink-0" />
-            <span>🔒 Your keys are stored locally in your browser. Sanket Pixel Technologies never accesses your API keys.</span>
+            <span>🔒 Your keys are stored locally in your browser. Sanket Cortex Labs never accesses your API keys.</span>
           </div>
         </div>
 
