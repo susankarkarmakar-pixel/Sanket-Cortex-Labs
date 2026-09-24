@@ -6,7 +6,7 @@
 </div>
 
 ## About
-Sanket Cortex Labs is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
+Susan AI is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
 
 It is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
 Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, and Manus models from a single unified interface.
