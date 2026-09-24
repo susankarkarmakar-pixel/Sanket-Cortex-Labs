@@ -8,16 +8,14 @@ import { ChatArea } from "@/components/chat/chat-area";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { SettingsModal } from "@/components/settings/settings-modal";
 import { useApiKeys } from "@/hooks/use-api-keys";
+import { useConversation } from "@/hooks/use-conversation";
 import { fileToUIPart } from "@/lib/file-attachments";
-import { saveConversation, loadConversation, generateConversationId, generateTitle } from "@/lib/chat-storage";
 import { Message } from "@/components/chat/chat-messages";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelOption>("deepseek");
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [conversationTitle, setConversationTitle] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const { keys, keyVersion } = useApiKeys();
 
@@ -44,6 +42,14 @@ export default function Home() {
     content: getMessageText(message),
   }));
 
+  const { currentConversationId, conversationTitle, startNewConversation, loadSavedConversation } = useConversation({
+    messages: displayMessages,
+    isLoading,
+    selectedModel,
+    setMessages,
+    setInput,
+  });
+
   useEffect(() => {
     const handleOpenSettings = () => setIsSettingsOpen(true);
     document.addEventListener("open-settings", handleOpenSettings);
@@ -52,40 +58,9 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    if (messages.length === 0 || isLoading) return;
-    const timeout = window.setTimeout(() => {
-      let idToUse = currentConversationId;
-      let titleToUse = conversationTitle;
-      if (!idToUse) {
-        idToUse = generateConversationId();
-        setCurrentConversationId(idToUse);
-        const firstUserMessage = messages.find((message) => message.role === "user");
-        const firstText = firstUserMessage ? getMessageText(firstUserMessage) : "";
-        titleToUse = firstText ? generateTitle(firstText) : "New Conversation";
-        setConversationTitle(titleToUse);
-      }
-      saveConversation(idToUse, titleToUse || "New Conversation", displayMessages, selectedModel);
-    }, 250);
-    return () => window.clearTimeout(timeout);
-  }, [messages, displayMessages, isLoading, currentConversationId, conversationTitle, selectedModel]);
-
-  const handleNewChat = () => {
-    setCurrentConversationId(null);
-    setConversationTitle(null);
-    setInput("");
-    setMessages([]);
-  };
-
   const handleLoadConversation = (id: string) => {
-    const conversation = loadConversation(id);
-    if (!conversation) return;
-    setCurrentConversationId(conversation.id);
-    setConversationTitle(conversation.title);
-    setSelectedModel(conversation.model === "manus" ? "deepseek" : conversation.model as ModelOption);
-    setInput("");
-    const restorableMessages = conversation.messages.filter((message): message is Message & { role: "user" | "assistant" } => message.role === "user" || message.role === "assistant");
-    setMessages(restorableMessages.map((message) => ({ id: message.id || generateConversationId(), role: message.role, parts: [{ type: "text" as const, text: message.content }] })));
+    const conversation = loadSavedConversation(id);
+    if (conversation) setSelectedModel(conversation.model === "manus" ? "deepseek" : conversation.model as ModelOption);
   };
 
   const handleSend = async (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
@@ -99,7 +74,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={handleNewChat} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} />
       <ChatArea onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
