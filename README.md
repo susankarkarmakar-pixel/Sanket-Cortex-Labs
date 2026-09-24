@@ -1,15 +1,15 @@
 <div align="center">
   <img src="public/logo.png" alt="Sanket Pixel Technologies Logo" width="150" />
-  <h1>Susan AI</h1>
-  <p><em>by Sanket Pixel Technologies</em></p>
+  <h1>🧠 Susan AI</h1>
+  <p><em>An intelligent multi-model chat interface by Sanket Pixel Technologies</em></p>
   <p>"Neural Solutions for a Smarter World"</p>
   <p><em>Alternative tagline: <strong>Decoding Intelligence</strong></em></p>
 </div>
 
 ## About
-Sanket Pixel Technologies is an AI research and development studio focused on building intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
+Susan AI is a product of Sanket Pixel Technologies, designed to build intelligent, multimodal systems that bridge the gap between human creativity and machine intelligence.
 
-Susan AI is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
+It is our multi-model AI chat interface with BYOK (Bring Your Own Key) support.
 Use DeepSeek, Claude, Hugging Face, Gemini, ChatGPT, Qwen, Kimi, and Manus models from a single unified interface.
 
 ## Features
