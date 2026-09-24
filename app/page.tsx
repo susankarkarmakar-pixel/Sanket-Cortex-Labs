@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, FileUIPart } from "ai";
+import { DefaultChatTransport } from "ai";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { ChatArea } from "@/components/chat/chat-area";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { SettingsModal } from "@/components/settings/settings-modal";
-import { getKeys, ApiKeys } from "@/lib/key-storage";
+import { useApiKeys } from "@/hooks/use-api-keys";
+import { fileToUIPart } from "@/lib/file-attachments";
 import { saveConversation, loadConversation, generateConversationId, generateTitle } from "@/lib/chat-storage";
 import { Message } from "@/components/chat/chat-messages";
 
@@ -17,17 +18,17 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState<ModelOption>("deepseek");
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationTitle, setConversationTitle] = useState<string | null>(null);
-  const [keyVersion, setKeyVersion] = useState(0);
   const [input, setInput] = useState("");
+  const { keys, keyVersion } = useApiKeys();
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/chat",
     body: () => ({
       provider: selectedModel,
-      apiKey: typeof window !== "undefined" ? getKeys()[selectedModel as keyof ApiKeys] || "" : "",
+      apiKey: keys[selectedModel] || "",
       keyVersion,
     }),
-  }), [selectedModel, keyVersion]);
+  }), [selectedModel, keyVersion, keys]);
 
   const useChatProps = useChat({ transport });
   const messages = useMemo(() => useChatProps.messages || [], [useChatProps.messages]);
@@ -44,12 +45,9 @@ export default function Home() {
   }));
 
   useEffect(() => {
-    const handleKeysUpdated = () => setKeyVersion((version) => version + 1);
     const handleOpenSettings = () => setIsSettingsOpen(true);
-    window.addEventListener("keys-updated", handleKeysUpdated);
     document.addEventListener("open-settings", handleOpenSettings);
     return () => {
-      window.removeEventListener("keys-updated", handleKeysUpdated);
       document.removeEventListener("open-settings", handleOpenSettings);
     };
   }, []);
@@ -112,14 +110,4 @@ function getMessageText(message: { parts?: Array<{ type?: string; text?: string;
   const text = message.parts?.filter((part) => part.type === "text").map((part) => part.text || "").join("\n") || (typeof message.content === "string" ? message.content : "");
   const files = message.parts?.filter((part) => part.type === "file").map((part) => part.filename || "Attached file") || [];
   return files.length > 0 ? `${text}${text ? "\n\n" : ""}Attachments: ${files.join(", ")}` : text;
-}
-
-async function fileToUIPart(file: File): Promise<FileUIPart> {
-  const url = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error || new Error(`Could not read ${file.name}`));
-    reader.readAsDataURL(file);
-  });
-  return { type: "file", mediaType: file.type || "application/octet-stream", filename: file.name, url };
 }

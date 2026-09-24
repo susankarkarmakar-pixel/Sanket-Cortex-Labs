@@ -1,0 +1,21 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { ApiKeys, getKeys } from "@/lib/key-storage";
+
+export function useApiKeys(): { keys: ApiKeys; keyVersion: number } {
+  const [keys, setKeys] = useState<ApiKeys>({});
+  const [keyVersion, setKeyVersion] = useState(0);
+
+  useEffect(() => {
+    const refreshKeys = () => {
+      setKeys(getKeys());
+      setKeyVersion((version) => version + 1);
+    };
+    refreshKeys();
+    window.addEventListener("keys-updated", refreshKeys);
+    return () => window.removeEventListener("keys-updated", refreshKeys);
+  }, []);
+
+  return { keys, keyVersion };
+}
