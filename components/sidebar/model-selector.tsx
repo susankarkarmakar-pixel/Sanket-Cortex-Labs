@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Shield, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INSTANT_CHAT_PROVIDERS, MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
-import { getKeys, ApiKeys } from "@/lib/key-storage";
+import { getApiKey, getKeys, ApiKeys } from "@/lib/key-storage";
+import { CustomProvider, getCustomProviders } from "@/lib/custom-providers";
 
 // Update ModelOption to match ModelProvider
-export type ModelOption = Exclude<ModelProvider, "manus">;
+export type ModelOption = Exclude<ModelProvider, "manus"> | string;
 
 interface ModelSelectorProps {
   selected: ModelOption;
@@ -37,20 +38,25 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [keys, setKeys] = useState<ApiKeys>({});
   const [activeIndex, setActiveIndex] = useState(0);
+  const [customProviders, setCustomProviders] = useState<CustomProvider[]>([]);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     setTimeout(() => {
       setKeys(getKeys());
+      setCustomProviders(getCustomProviders());
     }, 0);
     const handleKeysUpdated = () => setKeys(getKeys());
+    const handleCustomProvidersUpdated = () => setCustomProviders(getCustomProviders());
     window.addEventListener('keys-updated', handleKeysUpdated);
-    return () => window.removeEventListener('keys-updated', handleKeysUpdated);
+    window.addEventListener('custom-providers-updated', handleCustomProvidersUpdated);
+    return () => { window.removeEventListener('keys-updated', handleKeysUpdated); window.removeEventListener('custom-providers-updated', handleCustomProvidersUpdated); };
   }, []);
 
-  const selectedModel = MODELS.find(m => m.id === selected) || MODELS[0];
+  const availableModels = [...MODELS, ...customProviders.map((provider) => ({ id: provider.id, name: provider.name, description: provider.model, icon: Globe }))];
+  const selectedModel = availableModels.find(m => m.id === selected) || availableModels[0];
   const Icon = selectedModel.icon;
-  const selectedIndex = Math.max(0, MODELS.findIndex((model) => model.id === selected));
+  const selectedIndex = Math.max(0, availableModels.findIndex((model) => model.id === selected));
 
   const openSelector = (index = selectedIndex) => {
     setActiveIndex(index);
@@ -59,7 +65,7 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
   };
 
   const moveActive = (direction: 1 | -1) => {
-    const nextIndex = (activeIndex + direction + MODELS.length) % MODELS.length;
+    const nextIndex = (activeIndex + direction + availableModels.length) % availableModels.length;
     setActiveIndex(nextIndex);
     optionRefs.current[nextIndex]?.focus();
   };
@@ -85,7 +91,7 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
           <span className="truncate font-medium">{selectedModel.name}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className={cn("w-1.5 h-1.5 rounded-full", keys[selectedModel.id] ? "bg-green-500" : "bg-red-400")} />
+          <div className={cn("w-1.5 h-1.5 rounded-full", getApiKey(selectedModel.id, keys) ? "bg-green-500" : "bg-red-400")} />
           <ChevronDown className={cn("w-4 h-4 text-text-muted transition-transform", isOpen && "rotate-180")} />
         </div>
       </button>
@@ -97,10 +103,10 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
             onClick={() => setIsOpen(false)}
           />
           <div role="listbox" aria-label="Available AI models" className="absolute z-20 w-full mt-1.5 bg-surface border border-border-main rounded-xl shadow-lg overflow-hidden py-1">
-            {MODELS.map((model) => {
+            {availableModels.map((model) => {
               const ModelIcon = model.icon;
-              const hasKey = !!keys[model.id];
-              const modelIndex = MODELS.findIndex((candidate) => candidate.id === model.id);
+              const hasKey = !!getApiKey(model.id, keys);
+              const modelIndex = availableModels.findIndex((candidate) => candidate.id === model.id);
               return (
                 <button
                   key={model.id}
@@ -126,8 +132,8 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
                       optionRefs.current[0]?.focus();
                     } else if (event.key === "End") {
                       event.preventDefault();
-                      setActiveIndex(MODELS.length - 1);
-                      optionRefs.current[MODELS.length - 1]?.focus();
+                      setActiveIndex(availableModels.length - 1);
+                      optionRefs.current[availableModels.length - 1]?.focus();
                     } else if (event.key === "Escape") {
                       event.preventDefault();
                       setIsOpen(false);

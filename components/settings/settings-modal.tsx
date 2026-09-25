@@ -6,6 +6,7 @@ import { ApiKeyInput } from "./api-key-input";
 import { saveKeys, getKeys, clearKeys, getKeyStorageMode, ApiKeys, KeyStorageMode } from "@/lib/key-storage";
 import { FREE_TIER_DIRECTORY, INSTANT_CHAT_PROVIDERS, MODELS_METADATA } from "@/lib/ai-providers";
 import { AppSettings, getAppSettings, resetAppSettings, updateAppSettings } from "@/lib/app-settings";
+import { addCustomProvider, CustomProvider, getCustomProviders, isAllowedBaseUrl, removeCustomProvider } from "@/lib/custom-providers";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -32,6 +33,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [autoSave, setAutoSave] = useState(true);
   const [streaming, setStreaming] = useState(true);
   const [notifications, setNotifications] = useState(false);
+  const [customProviders, setCustomProviders] = useState<CustomProvider[]>([]);
+  const [customName, setCustomName] = useState("");
+  const [customModel, setCustomModel] = useState("");
+  const [customBaseUrl, setCustomBaseUrl] = useState("");
+  const [customError, setCustomError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -52,6 +58,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         setAutoSave(appSettings?.autoSave ?? true);
         setStreaming(appSettings?.streaming ?? true);
         setNotifications(appSettings?.notifications ?? false);
+        setCustomProviders(getCustomProviders());
       }, 0);
       window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     }
@@ -105,6 +112,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleKeyChange = (provider: keyof ApiKeys, value: string) => {
     setKeys(prev => ({ ...prev, [provider]: value }));
+  };
+
+  const handleAddCustomProvider = () => {
+    const name = customName.trim();
+    const model = customModel.trim();
+    const baseUrl = customBaseUrl.trim().replace(/\/$/, "");
+    if (!name || !model || !isAllowedBaseUrl(baseUrl)) {
+      setCustomError("Enter a provider name, model name, and an HTTPS OpenAI-compatible base URL. Localhost HTTP is allowed for desktop Ollama/local servers.");
+      return;
+    }
+    const provider = addCustomProvider({ name, model, baseUrl });
+    setCustomProviders((current) => [...current, provider]);
+    setCustomName(""); setCustomModel(""); setCustomBaseUrl(""); setCustomError(null);
   };
 
   return (
@@ -165,6 +185,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             ))}
           </div>
           <p className="mt-2 text-[11px] text-text-muted">“Free-tier” means the provider may offer free quota; it is not a guarantee of unlimited or permanent free access.</p>
+        </div>
+
+        <div className="mb-5 rounded-xl border border-border-main/60 bg-black/[0.02] p-3">
+          <h3 className="text-sm font-semibold text-text-main">Add a custom provider</h3>
+          <p className="mt-1 text-xs text-text-muted">Connect any OpenAI-compatible free or paid API, including local Ollama-compatible servers.</p>
+          <div className="mt-3 space-y-2">
+            <input value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="Provider name (e.g. Together AI)" className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent" />
+            <input value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Model name (e.g. meta-llama/Llama-3.3-70B)" className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent" />
+            <input value={customBaseUrl} onChange={(event) => setCustomBaseUrl(event.target.value)} placeholder="Base URL (https://api.example.com/v1)" className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-accent" />
+            {customError && <p role="alert" className="text-xs text-red-600">{customError}</p>}
+            <button type="button" onClick={handleAddCustomProvider} className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm font-medium hover:bg-black/5">Add provider</button>
+          </div>
+          {customProviders.length > 0 && <div className="mt-3 space-y-2">{customProviders.map((provider) => <div key={provider.id} className="flex items-center gap-2 rounded-lg border border-border-main/50 bg-surface p-2 text-xs"><div className="min-w-0 flex-1"><p className="truncate font-medium">{provider.name} · {provider.model}</p><p className="truncate text-text-muted">{provider.baseUrl}</p></div><button type="button" onClick={() => { removeCustomProvider(provider.id, keys, storageMode); setCustomProviders((current) => current.filter((item) => item.id !== provider.id)); const nextKeys = { ...keys }; delete nextKeys[provider.id]; setKeys(nextKeys); setSavedKeys(nextKeys); }} className="shrink-0 text-red-600 hover:underline">Remove</button></div>)}</div>}
         </div>
 
         {/* Form Body */}
@@ -250,6 +283,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             onChange={(val) => handleKeyChange("openrouter", val)}
             isSaved={!!savedKeys.openrouter}
           />
+          {customProviders.map((provider) => <ApiKeyInput key={provider.id} label={`${provider.name} API Key`} provider={provider.id} placeholder="Provider API key" helpUrl={provider.baseUrl} value={keys[provider.id] || ""} onChange={(val) => handleKeyChange(provider.id, val)} isSaved={!!savedKeys[provider.id]} />)}
         </div>
 
         {/* Footer */}

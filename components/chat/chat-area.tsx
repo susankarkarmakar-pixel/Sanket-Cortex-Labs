@@ -5,8 +5,9 @@ import { Menu, Settings, Sparkles } from "lucide-react";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
-import { getKeys, ApiKeys } from "@/lib/key-storage";
+import { getApiKey } from "@/lib/key-storage";
 import { MODELS_METADATA } from "@/lib/ai-providers";
+import { getCustomProviders } from "@/lib/custom-providers";
 
 interface ChatAreaProps {
   onOpenSidebar: () => void;
@@ -26,14 +27,16 @@ interface ChatAreaProps {
 
 export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
-  const canAttachFiles = MODELS_METADATA[selectedModel].capabilities.files;
-  const attachmentSupportMessage = `${MODELS_METADATA[selectedModel].name} does not support file attachments. Choose a vision/file-capable model such as Claude, Gemini, or OpenAI.`;
+  const customProvider = getCustomProviders().find((provider) => provider.id === selectedModel);
+  const modelMetadata = MODELS_METADATA[selectedModel as keyof typeof MODELS_METADATA];
+  const modelName = modelMetadata?.name || customProvider?.name || "Selected provider";
+  const canAttachFiles = modelMetadata?.capabilities.files ?? false;
+  const attachmentSupportMessage = `${modelName} does not support file attachments. Choose a vision/file-capable model such as Claude, Gemini, or OpenAI.`;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
-    const keys = getKeys();
-    if (!keys[selectedModel as keyof ApiKeys]) {
+    if (!getApiKey(selectedModel)) {
       event.preventDefault();
-      setToastError(`Please add your ${MODELS_METADATA[selectedModel].name} API key in Settings first.`);
+      setToastError(`Please add your ${modelName} API key in Settings first.`);
       window.setTimeout(() => setToastError(null), 5000);
       document.dispatchEvent(new CustomEvent("open-settings"));
       return;
@@ -56,7 +59,7 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 rounded-full border border-border-main/60 bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm">
-            <span>{MODELS_METADATA[selectedModel].icon}</span><span className="hidden sm:inline">{MODELS_METADATA[selectedModel].name}</span>
+            <span>{modelMetadata?.icon || "✦"}</span><span className="hidden sm:inline">{modelName}</span>
           </div>
           <button type="button" onClick={() => document.dispatchEvent(new CustomEvent("open-settings"))} aria-label="Open settings" className="rounded-full border border-border-main/60 bg-surface p-2.5 text-text-muted shadow-sm hover:text-text-main"><Settings className="h-4 w-4" /></button>
         </div>
@@ -66,7 +69,7 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
       {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
 
       <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} />
-      <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={MODELS_METADATA[selectedModel].name} />
+      <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={modelName} />
     </div>
   );
 }

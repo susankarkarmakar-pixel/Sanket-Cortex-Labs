@@ -1,4 +1,4 @@
-import { ApiKeys } from "@/lib/key-storage";
+import { ApiKeys, KeyStorageMode, saveKeys } from "@/lib/key-storage";
 
 export interface CustomProvider {
   id: string;
@@ -32,14 +32,12 @@ export function addCustomProvider(input: Omit<CustomProvider, "id" | "createdAt"
   return provider;
 }
 
-export function removeCustomProvider(id: string, keys?: ApiKeys): void {
+export function removeCustomProvider(id: string, keys?: ApiKeys, mode: KeyStorageMode = "browser"): void {
   saveCustomProviders(getCustomProviders().filter((provider) => provider.id !== id));
   if (keys && keys[id]) {
     const nextKeys = { ...keys };
     delete nextKeys[id];
-    const encoded = btoa(JSON.stringify(nextKeys));
-    localStorage.setItem("susan_api_keys_v1", encoded);
-    window.dispatchEvent(new Event("keys-updated"));
+    saveKeys(nextKeys, mode);
   }
 }
 

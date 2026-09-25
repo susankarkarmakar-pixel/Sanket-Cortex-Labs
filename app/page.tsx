@@ -14,6 +14,7 @@ import { useAppSettings } from "@/hooks/use-app-settings";
 import { getAppSettings } from "@/lib/app-settings";
 import { fileToUIPart } from "@/lib/file-attachments";
 import { Message } from "@/components/chat/chat-messages";
+import { getCustomProviders } from "@/lib/custom-providers";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function Home() {
     body: () => ({
       provider: selectedModel,
       apiKey: keys[selectedModel] || "",
+      customProvider: typeof window !== "undefined" ? getCustomProviders().find((provider) => provider.id === selectedModel) || null : null,
       keyVersion,
       language: settings.language,
       streaming: settings.streaming,

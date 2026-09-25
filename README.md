@@ -30,6 +30,7 @@ The screenshot below shows the Susan AI workspace in action, including the model
 
 - Browser-local BYOK storage with clear-key controls.
 - Free-tier directory for Google AI Studio, OpenRouter Free Router, and Hugging Face.
+- **Custom provider directory:** add any HTTPS OpenAI-compatible free or paid API, model ID, and API key; localhost HTTP endpoints are supported for desktop Ollama-compatible servers.
 - Streaming responses through the Vercel AI SDK.
 - Markdown, tables, links, and syntax-highlighted code blocks.
 - Responsive desktop and mobile layout.
@@ -50,6 +51,14 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000), open **Settings**, add a provider key, select that provider, and send a message.
+
+## Custom providers
+
+Open **Settings → API Keys → Add a custom provider** and enter a provider name, exact model identifier, OpenAI-compatible `/v1` base URL, and the provider API key. Custom definitions and keys remain local to the current browser/device. Hosted deployments require HTTPS endpoints; HTTP is intentionally limited to localhost addresses.
+
+## Gemini troubleshooting
+
+Google/Gemini keys are looked up with compatibility aliases, so a valid saved Google key will not be treated as missing. Select **Google Gemini Flash-Lite**, click **Save Keys**, and then send the message. Typing in the composer alone does not open Settings; Settings is only requested when sending without a recognized key.
 
 ## Windows desktop app
 
