@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Lock, Trash2, ExternalLink } from "lucide-react";
+import { X, Lock, Trash2, ExternalLink, Settings2, Cpu, KeyRound, Palette, Files, SlidersHorizontal, Database, Bell, Zap, Monitor, Globe2 } from "lucide-react";
 import { ApiKeyInput } from "./api-key-input";
 import { saveKeys, getKeys, clearKeys, getKeyStorageMode, ApiKeys, KeyStorageMode } from "@/lib/key-storage";
 import { FREE_TIER_DIRECTORY, MODELS_METADATA } from "@/lib/ai-providers";
@@ -11,11 +11,26 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
+type SettingsTab = "general" | "providers" | "keys" | "appearance" | "chat" | "advanced";
+
+const SETTINGS_TABS: Array<{ id: SettingsTab; label: string; description: string; icon: typeof Settings2 }> = [
+  { id: "general", label: "General", description: "App preferences", icon: Settings2 },
+  { id: "providers", label: "AI Providers", description: "Model selection", icon: Cpu },
+  { id: "keys", label: "API Keys", description: "Manage your keys", icon: KeyRound },
+  { id: "appearance", label: "Appearance", description: "Theme and display", icon: Palette },
+  { id: "chat", label: "Chat & Files", description: "Conversation settings", icon: Files },
+  { id: "advanced", label: "Advanced", description: "Developer options", icon: SlidersHorizontal },
+];
+
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [keys, setKeys] = useState<ApiKeys>({});
   const [savedKeys, setSavedKeys] = useState<ApiKeys>({});
   const [toast, setToast] = useState(false);
   const [storageMode, setStorageMode] = useState<KeyStorageMode>("session");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
+  const [autoSave, setAutoSave] = useState(true);
+  const [streaming, setStreaming] = useState(true);
+  const [notifications, setNotifications] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -96,13 +111,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       />
 
       {/* Modal */}
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="susan-settings-title" className="relative w-full max-w-md bg-surface border border-border-main/50 rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh]">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="susan-settings-title" className="relative flex h-[min(860px,92vh)] w-full max-w-6xl flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#FCFAF5] shadow-2xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <h2 id="susan-settings-title" className="text-xl font-semibold text-text-main flex items-center gap-2">
-            ⚙️ Susan AI Configuration
-          </h2>
+        <div className="flex shrink-0 items-center justify-between border-b border-border-main/50 px-6 py-5 md:px-8">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cream-highlight text-accent"><Settings2 className="h-6 w-6" /></span>
+            <div><h2 id="susan-settings-title" className="text-2xl font-semibold text-text-main">Settings</h2><p className="text-sm text-text-muted">Customize your experience with Susan AI</p></div>
+          </div>
           <button
             ref={closeButtonRef}
             onClick={onClose}
@@ -111,10 +127,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-text-muted mb-6">
-          Each chat request sends the selected key through this app to the chosen provider; Susan AI does not persist it on the server.
-        </p>
-
+        <div className="flex min-h-0 flex-1">
+          <aside className="hidden w-[260px] shrink-0 border-r border-border-main/60 bg-[#FAF5EC] p-5 md:block"><nav className="space-y-1" aria-label="Settings sections">{SETTINGS_TABS.map((tab) => { const Icon = tab.icon; const selected = activeTab === tab.id; return <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex w-full items-center gap-3 rounded-xl p-3 text-left ${selected ? "bg-cream-highlight text-text-main" : "text-text-muted hover:bg-black/5"}`}><Icon className="h-5 w-5" /><span><span className="block text-sm font-semibold">{tab.label}</span><span className="block text-xs opacity-70">{tab.description}</span></span></button>; })}</nav></aside>
+          <main className="min-w-0 flex-1 overflow-y-auto p-6 md:p-8">
+            {activeTab === "keys" ? <>
         <div role="alert" className="mb-5 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-950">
           <p className="font-semibold">Important: browser-local BYOK storage</p>
           <p className="mt-1 text-xs leading-relaxed">
@@ -266,6 +282,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         </div>
 
+        </> : <SettingsTabContent activeTab={activeTab} autoSave={autoSave} setAutoSave={setAutoSave} streaming={streaming} setStreaming={setStreaming} notifications={notifications} setNotifications={setNotifications} />}
+          </main>
+        </div>
+
         {/* Toast Notification */}
         {toast && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-4">
@@ -277,3 +297,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </div>
   );
 }
+
+
+function SettingsTabContent({ activeTab, autoSave, setAutoSave, streaming, setStreaming, notifications, setNotifications }: { activeTab: SettingsTab; autoSave: boolean; setAutoSave: (value: boolean) => void; streaming: boolean; setStreaming: (value: boolean) => void; notifications: boolean; setNotifications: (value: boolean) => void }) {
+  if (activeTab === "providers") return <SettingsPanel title="AI Providers" subtitle="View available providers and model capabilities"><InfoCard icon={Cpu} title="Provider selection" text="Choose your preferred model from the model selector in the workspace. Provider capabilities and file support are shown before you send a request." /><InfoCard icon={Globe2} title="Available integrations" text="Susan AI supports DeepSeek, Anthropic, Google, OpenAI, Qwen, Kimi, Sarvam, Hugging Face and OpenRouter." /></SettingsPanel>;
+  if (activeTab === "appearance") return <SettingsPanel title="Appearance" subtitle="Theme and display preferences"><InfoCard icon={Palette} title="Warm cream theme" text="Susan AI uses a calm cream and cocoa palette designed for focused, comfortable sessions." /><label className="flex items-center justify-between rounded-2xl border border-border-main/60 bg-surface p-5"><span><b className="block text-sm">Compact interface</b><small className="text-xs text-text-muted">Use tighter spacing in the workspace</small></span><input type="checkbox" className="h-5 w-5 accent-accent" /></label></SettingsPanel>;
+  if (activeTab === "chat") return <SettingsPanel title="Chat & Files" subtitle="Conversation and attachment preferences"><ToggleRow icon={Database} title="Auto-save conversations" text="Automatically save conversations to browser storage" value={autoSave} onChange={setAutoSave} /><ToggleRow icon={Zap} title="Enable streaming responses" text="Show AI responses as they are generated" value={streaming} onChange={setStreaming} /><InfoCard icon={Files} title="File limits" text="Up to 3 files, 4 MB each and 12 MB total. Provider support may vary." /></SettingsPanel>;
+  if (activeTab === "advanced") return <SettingsPanel title="Advanced" subtitle="Developer options and diagnostics"><InfoCard icon={SlidersHorizontal} title="Runtime diagnostics" text="Use the production health endpoint and release smoke tests to verify deployment health." /><InfoCard icon={Bell} title="Browser notifications" text="Notifications are currently opt-in and remain disabled by default." /><button type="button" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">Reset local preferences</button></SettingsPanel>;
+  return <SettingsPanel title="General" subtitle="Basic preferences for your Susan AI experience"><div className="grid gap-4 md:grid-cols-2"><label className="rounded-2xl border border-border-main/60 bg-surface p-4"><span className="mb-2 block text-sm font-semibold">Default AI Provider</span><select className="w-full rounded-xl border border-border-main bg-white px-3 py-2 text-sm"><option>DeepSeek Chat</option><option>OpenAI</option><option>Claude</option><option>Gemini</option></select><small className="mt-2 block text-xs text-text-muted">Model to use when starting a new chat</small></label><label className="rounded-2xl border border-border-main/60 bg-surface p-4"><span className="mb-2 block text-sm font-semibold">Conversation Language</span><select className="w-full rounded-xl border border-border-main bg-white px-3 py-2 text-sm"><option>Auto Detect</option><option>English</option><option>বাংলা</option></select><small className="mt-2 block text-xs text-text-muted">Language for AI responses</small></label></div><ToggleRow icon={Monitor} title="Startup behavior" text="Show the welcome screen when Susan AI opens" value={true} onChange={() => undefined} /><ToggleRow icon={Bell} title="Browser notifications" text="Show notifications when responses are ready" value={notifications} onChange={setNotifications} /><DataManagement /></SettingsPanel>;
+}
+function SettingsPanel({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) { return <div className="mx-auto max-w-3xl"><h1 className="text-2xl font-semibold text-text-main">{title}</h1><p className="mt-1 text-sm text-text-muted">{subtitle}</p><div className="mt-7 space-y-3">{children}</div></div>; }
+function InfoCard({ icon: Icon, title, text }: { icon: typeof Settings2; title: string; text: string }) { return <div className="rounded-2xl border border-border-main/60 bg-surface p-5"><Icon className="mb-4 h-6 w-6 text-accent" /><h2 className="text-sm font-semibold text-text-main">{title}</h2><p className="mt-2 text-sm leading-6 text-text-muted">{text}</p></div>; }
+function ToggleRow({ icon: Icon, title, text, value, onChange }: { icon: typeof Settings2; title: string; text: string; value: boolean; onChange: (value: boolean) => void }) { return <div className="flex items-center justify-between rounded-2xl border border-border-main/60 bg-surface p-5"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream-highlight text-accent"><Icon className="h-5 w-5" /></span><span><b className="block text-sm text-text-main">{title}</b><small className="text-xs text-text-muted">{text}</small></span></div><button type="button" role="switch" aria-checked={value} onClick={() => onChange(!value)} className={`relative h-7 w-12 rounded-full transition-colors ${value ? "bg-sidebar-cocoa" : "bg-slate-300"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-6" : "translate-x-1"}`} /></button></div>; }
+function DataManagement() { return <div className="border-t border-border-main/50 pt-6"><div className="mb-3 flex items-center gap-3"><Database className="h-5 w-5 text-accent" /><div><b className="block text-sm">Data Management</b><small className="text-xs text-text-muted">Manage your conversation data</small></div></div><div className="flex flex-wrap gap-2"><button type="button" className="rounded-xl border border-border-main bg-surface px-4 py-2 text-xs font-semibold">Export All Conversations</button><button type="button" className="rounded-xl border border-border-main bg-surface px-4 py-2 text-xs font-semibold">Import Conversations</button><button type="button" className="rounded-xl border border-red-300 bg-white px-4 py-2 text-xs font-semibold text-red-600">Clear All Conversations</button></div></div>; }
