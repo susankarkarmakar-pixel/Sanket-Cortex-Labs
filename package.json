@@ -48,6 +48,7 @@
   "build": {
     "appId": "com.sanketpixel.susanai",
     "productName": "Susan AI",
+    "icon": "public/susan-ai-icon.ico",
     "artifactName": "Susan-AI-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"
