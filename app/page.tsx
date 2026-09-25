@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/sidebar/sidebar";
 import { ChatArea } from "@/components/chat/chat-area";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { SettingsModal } from "@/components/settings/settings-modal";
+import { AboutModal } from "@/components/about/about-modal";
 import { useApiKeys } from "@/hooks/use-api-keys";
 import { useConversation } from "@/hooks/use-conversation";
 import { fileToUIPart } from "@/lib/file-attachments";
@@ -15,6 +16,7 @@ import { Message } from "@/components/chat/chat-messages";
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelOption>("deepseek");
   const [input, setInput] = useState("");
   const { keys, keyVersion } = useApiKeys();
@@ -74,9 +76,10 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
       <ChatArea onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );
 }

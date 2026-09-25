@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings, X, Trash2, Download, Upload, Trash } from "lucide-react";
+import { Plus, Settings, X, Trash2, Download, Upload, Trash, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector, ModelOption } from "./model-selector";
 import { ConversationSummary, getConversations, deleteConversation, clearConversations, exportConversations, importConversations } from "@/lib/chat-storage";
@@ -15,6 +15,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onLoadConversation: (id: string) => void;
   currentConversationId: string | null;
+  onOpenAbout: () => void;
 }
 
 export function Sidebar({
@@ -24,7 +25,8 @@ export function Sidebar({
   onSelectModel,
   onNewChat,
   onLoadConversation,
-  currentConversationId
+  currentConversationId,
+  onOpenAbout
 }: SidebarProps) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
 
@@ -203,6 +205,13 @@ export function Sidebar({
           >
             <Settings className="w-4 h-4" />
             <span>Settings</span>
+          </button>
+          <button
+            onClick={onOpenAbout}
+            className="flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 w-full text-sm font-medium"
+          >
+            <Info className="w-4 h-4" />
+            <span>About</span>
           </button>
           <div className="text-center text-[10px] text-white/40">
             © 2026 Sanket Pixel Technologies
