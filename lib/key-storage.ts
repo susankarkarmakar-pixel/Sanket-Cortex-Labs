@@ -1,4 +1,5 @@
 export interface ApiKeys {
+  [provider: string]: string | undefined;
   deepseek?: string;
   anthropic?: string;
   huggingface?: string;
@@ -20,7 +21,7 @@ export type KeyStorageMode = "session" | "browser";
 export function saveKeys(keys: ApiKeys, mode: KeyStorageMode = "browser"): void {
   if (typeof window === "undefined") return;
   const cleanedKeys: ApiKeys = {};
-  for (const key of Object.keys(keys) as Array<keyof ApiKeys>) {
+  for (const key of Object.keys(keys)) {
     const value = keys[key]?.trim();
     if (value) cleanedKeys[key] = value;
   }
@@ -61,8 +62,20 @@ export function getKeys(): ApiKeys {
   }
 }
 
-export function hasKey(provider: keyof ApiKeys): boolean {
-  return Boolean(getKeys()[provider]);
+export function hasKey(provider: string): boolean {
+  return Boolean(getApiKey(provider));
+}
+
+export function getApiKey(provider: string, keys: ApiKeys = getKeys()): string | undefined {
+  const aliases: Record<string, string[]> = {
+    google: ["google", "gemini", "gemini_api_key"],
+    openrouter: ["openrouter", "open_router"],
+  };
+  for (const key of aliases[provider] || [provider]) {
+    const value = keys[key]?.trim();
+    if (value) return value;
+  }
+  return undefined;
 }
 
 export function clearKeys(): void {

@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LanguageModel } from "ai";
+import { CustomProvider } from "@/lib/custom-providers";
 
 export type ModelProvider = "deepseek" | "anthropic" | "huggingface" | "google" | "openai" | "qwen" | "kimi" | "manus" | "sarvam" | "openrouter";
 
@@ -65,6 +66,10 @@ export function getModelConfig(provider: ModelProvider, apiKey: string): Languag
     return createOpenAI({ ...(metadata.baseURL ? { baseURL: metadata.baseURL } : {}), apiKey, ...(headers ? { headers } : {}) })(metadata.model);
   }
   throw new Error(`Unsupported provider transport: ${metadata.transport}`);
+}
+
+export function getCustomModelConfig(provider: CustomProvider, apiKey: string): LanguageModel {
+  return createOpenAI({ baseURL: provider.baseUrl.replace(/\/$/, ""), apiKey })(provider.model);
 }
 
 export const FREE_TIER_DIRECTORY: Array<{ provider: ModelProvider; title: string; model: string; note: string }> = [
