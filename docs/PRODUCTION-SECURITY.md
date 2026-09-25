@@ -37,3 +37,13 @@ npm test
 ```
 
 Live provider testing must be performed separately with restricted, low-quota test keys. Never commit provider keys to the repository or place them in automated logs.
+
+The repository includes an opt-in harness:
+
+```bash
+RUN_LIVE_PROVIDER_TESTS=true SUSAN_TEST_PROVIDERS=openai npm run test:providers
+```
+
+The harness skips providers without an environment key and reads the production build through the local chat route. It is intentionally not part of the default CI test command because provider calls can consume quota or incur charges.
+
+Windows installer validation must run on a Windows runner. Confirm both NSIS and portable artifacts launch, bind to an available local port, load `/api/health`, and terminate the bundled server on exit.
