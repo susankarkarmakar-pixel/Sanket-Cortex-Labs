@@ -1,5 +1,5 @@
 import { convertToModelMessages, streamText } from "ai";
-import { getModelConfig, isInstantChatProvider } from "@/lib/ai-providers";
+import { getModelConfig, isInstantChatProvider, MODELS_METADATA } from "@/lib/ai-providers";
 import { NextResponse } from "next/server";
 
 const MAX_MESSAGES = 100;
@@ -31,6 +31,9 @@ export async function POST(req: Request) {
 
     const validMessages = messages.filter(isUIMessage).slice(-MAX_MESSAGES);
     if (validMessages.length === 0) return jsonError("No valid messages found.", 400);
+    if (!MODELS_METADATA[provider].capabilities.files && validMessages.some((message) => message.parts?.some(isFilePart))) {
+      return jsonError("The selected provider does not support file attachments. Choose a vision/file-capable provider.", 400);
+    }
 
     const modelMessages = validMessages.some((message) => Array.isArray(message.parts))
       ? await convertToModelMessages(validMessages as never)
@@ -77,6 +80,10 @@ function isUIPart(value: unknown): boolean {
   if (part.filename.length === 0 || part.filename.length > 255 || part.url.length > MAX_FILE_DATA_URL_LENGTH) return false;
   if (!(part.url.startsWith("data:image/") || part.url.startsWith("data:application/pdf") || part.url.startsWith("data:text/"))) return false;
   return part.mediaType.startsWith("image/") || ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/json"].includes(part.mediaType);
+}
+
+function isFilePart(value: unknown): boolean {
+  return Boolean(value && typeof value === "object" && (value as { type?: unknown }).type === "file");
 }
 
 function jsonError(error: string, status: number) {

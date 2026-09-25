@@ -97,6 +97,20 @@ test("chat route rejects malformed message parts", async () => {
   assert.deepEqual(await response.json(), { error: "No valid messages found." });
 });
 
+test("chat route rejects valid file parts for providers without file support", async () => {
+  const response = await fetch(`${baseUrl}/api/chat`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      provider: "deepseek",
+      apiKey: "placeholder-key",
+      messages: [{ role: "user", parts: [{ type: "file", mediaType: "text/plain", filename: "notes.txt", url: "data:text/plain;base64,SGk=" }] }],
+    }),
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: "The selected provider does not support file attachments. Choose a vision/file-capable provider." });
+});
+
 test("chat errors are not cacheable", async () => {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: "POST",

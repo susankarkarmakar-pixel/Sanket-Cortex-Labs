@@ -16,9 +16,11 @@ interface MessageInputProps {
   onSubmit: (event: React.FormEvent<HTMLFormElement>, files: File[]) => void;
   isLoading: boolean;
   stop: () => void;
+  canAttachFiles: boolean;
+  attachmentSupportMessage?: string;
 }
 
-export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop }: MessageInputProps) {
+export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, canAttachFiles, attachmentSupportMessage }: MessageInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -33,6 +35,10 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop }
 
   const addFiles = (selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
+    if (!canAttachFiles) {
+      setFileError(attachmentSupportMessage || "Attachments are not supported by this provider.");
+      return;
+    }
     const nextFiles = [...files];
     let error: string | null = null;
     for (const file of Array.from(selectedFiles)) {
@@ -92,8 +98,8 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop }
           </div>
         )}
         <div className="flex items-end gap-2">
-          <input ref={fileInputRef} type="file" multiple accept={ACCEPTED_FILES} className="sr-only" onChange={(event) => addFiles(event.target.files)} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Attach files" title="Attach files" className="mb-1 flex shrink-0 items-center justify-center rounded-xl p-2.5 text-text-muted transition-colors hover:bg-black/5 hover:text-text-main">
+          <input ref={fileInputRef} type="file" multiple accept={ACCEPTED_FILES} disabled={!canAttachFiles} className="sr-only" onChange={(event) => addFiles(event.target.files)} />
+          <button type="button" disabled={!canAttachFiles} onClick={() => fileInputRef.current?.click()} aria-label={canAttachFiles ? "Attach files" : "Attachments unavailable for this provider"} title={canAttachFiles ? "Attach files" : "Attachments unavailable for this provider"} className={cn("mb-1 flex shrink-0 items-center justify-center rounded-xl p-2.5 transition-colors", canAttachFiles ? "text-text-muted hover:bg-black/5 hover:text-text-main" : "cursor-not-allowed text-text-muted/40")}>
             <Paperclip className="h-4 w-4" />
           </button>
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={handleKeyDown} aria-label="Message Susan AI" placeholder="How can I help you today?" className="min-h-[48px] max-h-[200px] flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 font-sans text-text-main outline-none placeholder:text-text-muted/60" rows={1} />
@@ -109,7 +115,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop }
         </div>
       </form>
       {fileError && <p role="alert" className="mx-auto mt-2 max-w-3xl text-center text-xs text-red-600">{fileError}</p>}
-      <div className="mt-3 text-center text-xs text-text-muted/70">Attach up to 3 images, PDF, text, CSV, or JSON files (4 MB each, 12 MB total).</div>
+      <div className="mt-3 text-center text-xs text-text-muted/70">{canAttachFiles ? "Attach up to 3 images, PDF, text, CSV, or JSON files (4 MB each, 12 MB total)." : (attachmentSupportMessage || "Attachments are unavailable for this provider.")}</div>
       <div className="mt-1 text-center text-xs text-text-muted/70">Susan AI may produce inaccurate information about people, places, or facts.</div>
     </div>
   );

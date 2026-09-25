@@ -25,6 +25,8 @@ interface ChatAreaProps {
 
 export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
+  const canAttachFiles = MODELS_METADATA[selectedModel].capabilities.files;
+  const attachmentSupportMessage = `${MODELS_METADATA[selectedModel].name} does not support file attachments. Choose a vision/file-capable model such as Claude, Gemini, or OpenAI.`;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
     const keys = getKeys();
@@ -55,7 +57,7 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
       {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
 
       <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} />
-      <MessageInput input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} />
+      <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} />
     </div>
   );
 }
