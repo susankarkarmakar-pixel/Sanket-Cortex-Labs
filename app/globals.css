@@ -11,6 +11,9 @@
   --accent-hover: #6F3D28;
   --border-color: #D8CFC3;
   --surface-color: #FFFFFF;
+  --sidebar-cocoa: #2B1B14;
+  --sidebar-cocoa-soft: #4A2F21;
+  --cream-highlight: #F3E2C9;
 
   /* Default theme */
   --background: var(--bg-main);
@@ -36,6 +39,9 @@
   --color-accent: var(--accent-color);
   --color-surface: var(--surface-color);
   --color-border-main: var(--border-color);
+  --color-sidebar-cocoa: var(--sidebar-cocoa);
+  --color-sidebar-cocoa-soft: var(--sidebar-cocoa-soft);
+  --color-cream-highlight: var(--cream-highlight);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

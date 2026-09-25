@@ -26,21 +26,21 @@ export function MessageBubble({ role, content, isStreaming, onRetry }: MessageBu
   return (
     <div
       className={cn(
-        "flex w-full mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300",
+        "flex w-full mb-5 animate-in fade-in slide-in-from-bottom-2 duration-300",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "max-w-[85%] md:max-w-[80%] flex items-start gap-4 relative group",
+          "max-w-[92%] md:max-w-[86%] flex items-start gap-3 relative group",
           isUser
-            ? "bg-black/5 rounded-2xl px-5 py-3.5 text-text-main shadow-sm"
-            : "px-2 py-1 text-text-main"
+            ? "bg-cream-highlight/70 border border-cream-highlight rounded-2xl px-5 py-3.5 text-text-main shadow-sm"
+            : "rounded-2xl border border-border-main/70 bg-surface px-5 py-4 text-text-main shadow-sm"
         )}
       >
         {!isUser && (
-          <div className="shrink-0 w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-bold text-sm shadow-sm mt-0.5">
-            S
+            <div className="shrink-0 w-9 h-9 rounded-full bg-sidebar-cocoa text-cream-highlight flex items-center justify-center font-serif font-bold text-sm shadow-sm mt-0.5">
+              ✦
           </div>
         )}
 

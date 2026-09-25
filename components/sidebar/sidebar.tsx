@@ -95,29 +95,29 @@ export function Sidebar({
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-[280px] bg-bg-sidebar flex flex-col transition-transform duration-300 ease-in-out border-r border-border-main/40",
+        "fixed inset-y-0 left-0 z-50 w-[300px] bg-sidebar-cocoa text-white flex flex-col transition-transform duration-300 ease-in-out border-r border-white/10",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         "lg:static lg:inset-0"
       )}>
-        <div className="flex-1 flex flex-col p-4 overflow-hidden">
+        <div className="flex-1 flex flex-col p-5 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-7">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/susan-ai-logo-sidebar.png"
+              src="/susan-ai-logo-sidebar-dark.png"
               alt="Susan AI — Sanket Pixel Technologies"
-              className="w-56 max-w-full h-auto max-h-20 object-contain object-left"
+              className="w-60 max-w-full h-auto max-h-20 object-contain object-left"
             />
             <button
               onClick={onClose}
-              className="p-1 rounded-md hover:bg-black/5 lg:hidden text-text-muted hover:text-text-main"
+              className="p-2 rounded-lg hover:bg-white/10 lg:hidden text-white/70 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Model Selector */}
-          <div className="mb-6">
+          <div className="mb-5 [&>div>button]:bg-white/10 [&>div>button]:border-white/10 [&>div>button]:text-white [&>div>button]:shadow-none [&>div>button:hover]:bg-white/15 [&_svg]:text-cream-highlight [&_span]:text-white">
             <ModelSelector selected={selectedModel} onSelect={onSelectModel} />
           </div>
 
@@ -127,7 +127,7 @@ export function Sidebar({
               onNewChat();
               if (window.innerWidth < 1024) onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-surface text-text-main shadow-sm border border-border-main/50 hover:bg-black/5 transition-colors mb-6 text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-cream-highlight text-sidebar-cocoa shadow-sm hover:bg-white transition-colors mb-6 text-sm font-semibold"
           >
             <Plus className="w-4 h-4" />
             New Chat
@@ -136,7 +136,7 @@ export function Sidebar({
           {/* Chat History */}
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
             {conversations.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-text-muted text-sm">
+              <div className="flex items-center justify-center h-32 text-white/45 text-sm">
                 No conversations yet
               </div>
             ) : (
@@ -156,21 +156,21 @@ export function Sidebar({
                       }}
                       className={cn(
                         "group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors relative overflow-hidden",
-                        isActive ? "bg-surface text-text-main shadow-sm border border-border-main/50" : "text-text-muted hover:bg-black/5 hover:text-text-main border border-transparent"
+                        isActive ? "bg-sidebar-cocoa-soft text-white shadow-sm border border-white/10" : "text-white/65 hover:bg-white/10 hover:text-white border border-transparent"
                       )}
                     >
                       <span className="shrink-0 text-[13px] opacity-80">{IconStr}</span>
                       <div className="flex-1 min-w-0 flex flex-col">
                         <span className="truncate font-medium leading-tight">{conv.title}</span>
-                        <span className="text-[10px] text-text-muted mt-1 opacity-70">{dateStr}</span>
+                        <span className="text-[10px] text-white/45 mt-1">{dateStr}</span>
                       </div>
                       <div
                         role="button"
                         tabIndex={0}
                         onClick={(e) => handleDelete(e, conv.id)}
                         className={cn(
-                          "absolute right-2 p-1.5 rounded-md text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100",
-                          isActive && "opacity-100 bg-surface" // Always show on active for touch devices
+                          "absolute right-2 p-1.5 rounded-md text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-colors opacity-0 group-hover:opacity-100",
+                          isActive && "opacity-100 bg-sidebar-cocoa-soft" // Always show on active for touch devices
                         )}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -182,29 +182,29 @@ export function Sidebar({
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 mt-3">
-            <button type="button" onClick={handleExport} title="Export conversations" className="flex items-center justify-center gap-1 rounded-lg border border-border-main/50 px-2 py-2 text-[11px] text-text-muted hover:bg-black/5 hover:text-text-main">
+          <div className="grid grid-cols-1 gap-1.5 mt-3">
+            <button type="button" onClick={handleExport} title="Export conversations" className="flex items-center justify-start gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/75 hover:bg-white/10 hover:text-white">
               <Download className="h-3.5 w-3.5" /> Export
             </button>
-            <button type="button" onClick={handleImport} title="Import conversations" className="flex items-center justify-center gap-1 rounded-lg border border-border-main/50 px-2 py-2 text-[11px] text-text-muted hover:bg-black/5 hover:text-text-main">
+            <button type="button" onClick={handleImport} title="Import conversations" className="flex items-center justify-start gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/75 hover:bg-white/10 hover:text-white">
               <Upload className="h-3.5 w-3.5" /> Import
             </button>
-            <button type="button" onClick={handleClear} title="Delete all conversations" className="flex items-center justify-center gap-1 rounded-lg border border-border-main/50 px-2 py-2 text-[11px] text-text-muted hover:bg-red-50 hover:text-red-600">
+            <button type="button" onClick={handleClear} title="Delete all conversations" className="flex items-center justify-start gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/75 hover:bg-red-500/15 hover:text-red-200">
               <Trash className="h-3.5 w-3.5" /> Clear
             </button>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border-main/40 flex flex-col gap-4">
+        <div className="p-5 border-t border-white/10 flex flex-col gap-3">
           <button
             onClick={() => document.dispatchEvent(new CustomEvent('open-settings'))}
-            className="flex items-center gap-2 text-text-muted hover:text-text-main transition-colors p-2 rounded-xl hover:bg-black/5 w-full text-sm font-medium"
+            className="flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 w-full text-sm font-medium"
           >
             <Settings className="w-4 h-4" />
             <span>Settings</span>
           </button>
-          <div className="text-center text-[10px] text-text-muted opacity-60">
+          <div className="text-center text-[10px] text-white/40">
             © 2026 Sanket Pixel Technologies
           </div>
         </div>

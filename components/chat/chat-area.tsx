@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, Settings, Sparkles } from "lucide-react";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
@@ -21,9 +21,10 @@ interface ChatAreaProps {
   error: Error | undefined;
   onRetry: () => void;
   conversationTitle: string | null;
+  onPrompt: (prompt: string) => void;
 }
 
-export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle }: ChatAreaProps) {
+export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
   const canAttachFiles = MODELS_METADATA[selectedModel].capabilities.files;
   const attachmentSupportMessage = `${MODELS_METADATA[selectedModel].name} does not support file attachments. Choose a vision/file-capable model such as Claude, Gemini, or OpenAI.`;
@@ -42,22 +43,30 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
 
   return (
     <div className="relative flex h-full flex-1 flex-col overflow-hidden bg-bg-main">
-      <header className="z-20 flex h-14 shrink-0 items-center gap-4 bg-bg-main/90 px-4 backdrop-blur-sm">
+      <header className="z-20 flex h-[72px] shrink-0 items-center gap-4 border-b border-border-main/50 bg-bg-main/90 px-4 backdrop-blur-sm md:px-8">
         <button type="button" onClick={onOpenSidebar} aria-label="Open sidebar" className="-ml-2 rounded-lg p-2 text-text-muted hover:bg-black/5 hover:text-text-main lg:hidden">
           <Menu className="h-6 w-6" />
         </button>
-        <div className="flex min-w-0 flex-1 items-center justify-center">
-          <div className="flex max-w-full items-center gap-2 rounded-lg px-3 py-1 text-sm text-text-muted">
-            {conversationTitle ? <span className="max-w-[200px] truncate font-medium md:max-w-[400px]">{conversationTitle}</span> : <div className="flex items-center gap-1.5"><span>{MODELS_METADATA[selectedModel].icon}</span><span className="font-medium">{MODELS_METADATA[selectedModel].name}</span></div>}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-border-main/60 bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cream-highlight text-accent"><Sparkles className="h-3.5 w-3.5" /></span>
+            <span className="hidden sm:inline">Susan AI</span>
           </div>
+          {conversationTitle && <span className="ml-2 hidden max-w-[260px] truncate text-sm text-text-muted md:inline">{conversationTitle}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-border-main/60 bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm">
+            <span>{MODELS_METADATA[selectedModel].icon}</span><span className="hidden sm:inline">{MODELS_METADATA[selectedModel].name}</span>
+          </div>
+          <button type="button" onClick={() => document.dispatchEvent(new CustomEvent("open-settings"))} aria-label="Open settings" className="rounded-full border border-border-main/60 bg-surface p-2.5 text-text-muted shadow-sm hover:text-text-main"><Settings className="h-4 w-4" /></button>
         </div>
       </header>
 
       {toastError && <div role="alert" className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">{toastError}</div>}
       {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
 
-      <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} />
-      <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} />
+      <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} />
+      <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={MODELS_METADATA[selectedModel].name} />
     </div>
   );
 }

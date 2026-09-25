@@ -18,9 +18,10 @@ interface MessageInputProps {
   stop: () => void;
   canAttachFiles: boolean;
   attachmentSupportMessage?: string;
+  modelName: string;
 }
 
-export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, canAttachFiles, attachmentSupportMessage }: MessageInputProps) {
+export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, canAttachFiles, attachmentSupportMessage, modelName }: MessageInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -83,8 +84,8 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
   const isEmpty = input.trim().length === 0 && files.length === 0;
 
   return (
-    <div className="relative z-10 w-full bg-bg-main p-4">
-      <form ref={formRef} onSubmit={handleSubmit} className="mx-auto max-w-3xl rounded-2xl border border-border-main/50 bg-surface p-2 shadow-sm transition-all focus-within:border-border-main focus-within:ring-1 focus-within:ring-border-main/50">
+    <div className="relative z-10 w-full bg-bg-main px-4 pb-4 pt-3 md:px-8">
+      <form ref={formRef} onSubmit={handleSubmit} className="mx-auto max-w-5xl rounded-3xl border border-border-main/60 bg-surface p-3 shadow-sm transition-all focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5">
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 px-2 pb-2" aria-label="Selected attachments">
             {files.map((file, index) => (
@@ -103,6 +104,10 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
             <Paperclip className="h-4 w-4" />
           </button>
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={handleKeyDown} aria-label="Message Susan AI" placeholder="How can I help you today?" className="min-h-[48px] max-h-[200px] flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 font-sans text-text-main outline-none placeholder:text-text-muted/60" rows={1} />
+          <div className="mb-1 hidden items-center gap-2 rounded-full bg-cream-highlight/70 px-3 py-2 text-xs font-medium text-text-main sm:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="max-w-[120px] truncate">{modelName}</span>
+          </div>
           {isLoading ? (
             <button type="button" onClick={stop} aria-label="Stop generating response" className="mb-1 flex shrink-0 items-center justify-center rounded-xl bg-text-main p-2.5 text-surface transition-colors hover:opacity-80">
               <Square className="h-4 w-4 fill-current" />
@@ -115,8 +120,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
         </div>
       </form>
       {fileError && <p role="alert" className="mx-auto mt-2 max-w-3xl text-center text-xs text-red-600">{fileError}</p>}
-      <div className="mt-3 text-center text-xs text-text-muted/70">{canAttachFiles ? "Attach up to 3 images, PDF, text, CSV, or JSON files (4 MB each, 12 MB total)." : (attachmentSupportMessage || "Attachments are unavailable for this provider.")}</div>
-      <div className="mt-1 text-center text-xs text-text-muted/70">Susan AI may produce inaccurate information about people, places, or facts.</div>
+      <div className="mx-auto mt-2 max-w-5xl text-center text-[11px] text-text-muted/60">{canAttachFiles ? "Attach images, PDFs, text, CSV, or JSON files." : (attachmentSupportMessage || "Attachments are unavailable for this provider.")} <span className="mx-1">·</span> Susan AI may produce inaccurate information.</div>
     </div>
   );
 }
