@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const parsedBodyBytes = new TextEncoder().encode(JSON.stringify(body)).byteLength;
     if (parsedBodyBytes > MAX_BODY_BYTES) return jsonError("Request is too large. Keep attachments under 20 MB total.", 413);
     if (!body || typeof body !== "object") return jsonError("Invalid request body.", 400);
-    const { messages, provider, apiKey } = body as { messages?: unknown; provider?: unknown; apiKey?: unknown };
+    const { messages, provider, apiKey, language } = body as { messages?: unknown; provider?: unknown; apiKey?: unknown; language?: unknown };
     if (typeof provider !== "string" || !isInstantChatProvider(provider)) return jsonError("This provider is not available for instant chat.", 400);
     if (typeof apiKey !== "string" || apiKey.trim().length < 8 || apiKey.length > 500) return jsonError("A valid API key is required.", 400);
     if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return jsonError("Messages must contain between 1 and 100 items.", 400);
@@ -38,8 +38,9 @@ export async function POST(req: Request) {
           .map((message) => ({ role: message.role, content: message.content as string }));
     if (modelMessages.length === 0) return jsonError("No valid message content found.", 400);
 
+    const languageInstruction = language === "bn" ? "Respond in Bengali unless the user asks for another language." : language === "en" ? "Respond in English unless the user asks for another language." : "";
     const model = getModelConfig(provider, apiKey.trim());
-    const result = streamText({ model, messages: modelMessages });
+    const result = streamText({ model, messages: languageInstruction ? [{ role: "system", content: languageInstruction }, ...modelMessages] : modelMessages });
     const anyResult = result as unknown as { toUIMessageStreamResponse?: (options?: { onError?: (error: unknown) => string }) => Response; toDataStreamResponse?: () => Response; toTextStreamResponse?: () => Response };
     const response = anyResult.toUIMessageStreamResponse?.({ onError: providerStreamError }) ?? anyResult.toDataStreamResponse?.() ?? anyResult.toTextStreamResponse?.() ?? jsonError("Streaming is unavailable.", 500);
     response.headers.set("Cache-Control", "no-store");

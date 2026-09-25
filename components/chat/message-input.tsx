@@ -27,6 +27,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
   const formRef = useRef<HTMLFormElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
+  const totalFileSize = files.reduce((sum, file) => sum + file.size, 0);
 
   useEffect(() => {
     if (!textareaRef.current) return;
@@ -85,7 +86,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
 
   return (
     <div className="relative z-10 w-full bg-bg-main px-4 pb-4 pt-3 md:px-8">
-      <form ref={formRef} onSubmit={handleSubmit} className="mx-auto max-w-5xl rounded-3xl border border-border-main/60 bg-surface p-3 shadow-sm transition-all focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5">
+      <form ref={formRef} onSubmit={handleSubmit} onDragOver={(event) => { if (canAttachFiles) event.preventDefault(); }} onDrop={(event) => { if (!canAttachFiles) return; event.preventDefault(); addFiles(event.dataTransfer.files); }} className="mx-auto max-w-5xl rounded-3xl border border-border-main/60 bg-surface p-3 shadow-sm transition-all focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5">
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 px-2 pb-2" aria-label="Selected attachments">
             {files.map((file, index) => (
@@ -96,6 +97,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
                 </button>
               </div>
             ))}
+            <span className="self-center text-[10px] text-text-muted">{(totalFileSize / (1024 * 1024)).toFixed(1)} / 12 MB</span>
           </div>
         )}
         <div className="flex items-end gap-2">
@@ -119,7 +121,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
           )}
         </div>
       </form>
-      {fileError && <p role="alert" className="mx-auto mt-2 max-w-3xl text-center text-xs text-red-600">{fileError}</p>}
+      {fileError && <p role="alert" aria-live="polite" className="mx-auto mt-2 max-w-3xl text-center text-xs text-red-600">{fileError}</p>}
       <div className="mx-auto mt-2 max-w-5xl text-center text-[11px] text-text-muted/60">{canAttachFiles ? "Attach images, PDFs, text, CSV, or JSON files." : (attachmentSupportMessage || "Attachments are unavailable for this provider.")} <span className="mx-1">·</span> Susan AI may produce inaccurate information.</div>
     </div>
   );

@@ -10,6 +10,8 @@ import { SettingsModal } from "@/components/settings/settings-modal";
 import { AboutModal } from "@/components/about/about-modal";
 import { useApiKeys } from "@/hooks/use-api-keys";
 import { useConversation } from "@/hooks/use-conversation";
+import { useAppSettings } from "@/hooks/use-app-settings";
+import { getAppSettings } from "@/lib/app-settings";
 import { fileToUIPart } from "@/lib/file-attachments";
 import { Message } from "@/components/chat/chat-messages";
 
@@ -17,9 +19,10 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ModelOption>("deepseek");
+  const [selectedModel, setSelectedModel] = useState<ModelOption>(() => getAppSettings().defaultProvider as ModelOption);
   const [input, setInput] = useState("");
   const { keys, keyVersion } = useApiKeys();
+  const { settings } = useAppSettings();
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/chat",
@@ -27,8 +30,10 @@ export default function Home() {
       provider: selectedModel,
       apiKey: keys[selectedModel] || "",
       keyVersion,
+      language: settings.language,
+      streaming: settings.streaming,
     }),
-  }), [selectedModel, keyVersion, keys]);
+  }), [selectedModel, keyVersion, keys, settings.language, settings.streaming]);
 
   const useChatProps = useChat({ transport });
   const messages = useMemo(() => useChatProps.messages || [], [useChatProps.messages]);
@@ -47,6 +52,7 @@ export default function Home() {
   const { currentConversationId, conversationTitle, startNewConversation, loadSavedConversation } = useConversation({
     messages: displayMessages,
     isLoading,
+    autoSave: settings.autoSave,
     selectedModel,
     setMessages,
     setInput,

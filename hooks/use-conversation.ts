@@ -20,17 +20,18 @@ type RestorableMessage = {
 interface UseConversationOptions {
   messages: Message[];
   isLoading: boolean;
+  autoSave?: boolean;
   selectedModel: ModelOption;
   setMessages: (messages: RestorableMessage[]) => void;
   setInput: (value: string) => void;
 }
 
-export function useConversation({ messages, isLoading, selectedModel, setMessages, setInput }: UseConversationOptions) {
+export function useConversation({ messages, isLoading, autoSave = true, selectedModel, setMessages, setInput }: UseConversationOptions) {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationTitle, setConversationTitle] = useState<string | null>(null);
 
   useEffect(() => {
-    if (messages.length === 0 || isLoading) return;
+    if (!autoSave || messages.length === 0 || isLoading) return;
     const timeout = window.setTimeout(() => {
       let idToUse = currentConversationId;
       let titleToUse = conversationTitle;
@@ -44,7 +45,7 @@ export function useConversation({ messages, isLoading, selectedModel, setMessage
       saveConversation(idToUse, titleToUse || "New Conversation", messages, selectedModel);
     }, 250);
     return () => window.clearTimeout(timeout);
-  }, [messages, isLoading, currentConversationId, conversationTitle, selectedModel]);
+  }, [autoSave, messages, isLoading, currentConversationId, conversationTitle, selectedModel]);
 
   const startNewConversation = () => {
     setCurrentConversationId(null);
