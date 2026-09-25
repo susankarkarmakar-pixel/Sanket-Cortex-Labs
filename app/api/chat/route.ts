@@ -1,5 +1,6 @@
 import { convertToModelMessages, streamText } from "ai";
 import { getModelConfig, isInstantChatProvider, MODELS_METADATA } from "@/lib/ai-providers";
+import { getClientIdentifier, isWithinRateLimit, RATE_LIMIT_RETRY_AFTER_SECONDS } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 const MAX_MESSAGES = 100;
@@ -7,18 +8,13 @@ const MAX_MESSAGE_LENGTH = 100_000;
 const MAX_MESSAGE_PARTS = 24;
 const MAX_BODY_BYTES = 20_000_000;
 const MAX_FILE_DATA_URL_LENGTH = 16_000_000;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 30;
-const MAX_RATE_LIMIT_KEYS = 10_000;
-const requestLog = new Map<string, number[]>();
-
 export async function POST(req: Request) {
   try {
     if (!req.headers.get("content-type")?.toLowerCase().includes("application/json")) return jsonError("Content-Type must be application/json.", 415);
     const contentLength = Number(req.headers.get("content-length") || 0);
     if (contentLength > MAX_BODY_BYTES) return jsonError("Request is too large. Keep attachments under 20 MB total.", 413);
-    const clientId = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-    if (!isWithinRateLimit(clientId)) return jsonError("Too many requests. Please wait a moment and try again.", 429);
+    const clientId = getClientIdentifier(req);
+    if (!isWithinRateLimit(clientId)) return jsonError("Too many requests. Please wait a moment and try again.", 429, { "Retry-After": String(RATE_LIMIT_RETRY_AFTER_SECONDS) });
 
     const body: unknown = await req.json();
     const parsedBodyBytes = new TextEncoder().encode(JSON.stringify(body)).byteLength;
@@ -56,7 +52,7 @@ export async function POST(req: Request) {
     if (message.includes("json") || message.includes("unexpected end")) return jsonError("Invalid JSON request body.", 400);
     if (rawMessage.includes("asynchronous") || rawMessage.includes("instant chat")) return jsonError(rawMessage, 400);
     if (status === 401 || status === 403) return jsonError("The API key was rejected by the provider.", 401);
-    if (status === 429) return jsonError("The provider rate limit or quota was exceeded.", 429);
+    if (status === 429) return jsonError("The provider rate limit or quota was exceeded.", 429, { "Retry-After": String(RATE_LIMIT_RETRY_AFTER_SECONDS) });
     if (status === 402 || message.includes("credit") || message.includes("balance")) return jsonError("The provider account has insufficient credits.", 402);
     if (message.includes("loading") || message.includes("queue")) return jsonError("The model is currently busy. Please try again shortly.", 503);
     return jsonError(rawMessage && rawMessage.length < 240 ? rawMessage : "The provider could not complete this request. Check your key, model quota, and provider status.", 502);
@@ -86,8 +82,8 @@ function isFilePart(value: unknown): boolean {
   return Boolean(value && typeof value === "object" && (value as { type?: unknown }).type === "file");
 }
 
-function jsonError(error: string, status: number) {
-  return NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+function jsonError(error: string, status: number, headers: Record<string, string> = {}) {
+  return NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store", ...headers } });
 }
 
 function providerStreamError(error: unknown): string {
@@ -99,21 +95,4 @@ function providerStreamError(error: unknown): string {
   if (status === 404 || raw.includes("model") || raw.includes("not found")) return "This model is unavailable for the selected provider. Try another model or provider.";
   if (status === 429 || raw.includes("rate limit") || raw.includes("too many")) return "The provider rate limit was reached. Please wait and try again.";
   return "The provider could not complete the request. Check the API key, model access, and provider status.";
-}
-
-function isWithinRateLimit(clientId: string): boolean {
-  const now = Date.now();
-  if (requestLog.size >= MAX_RATE_LIMIT_KEYS && !requestLog.has(clientId)) {
-    for (const [key, timestamps] of requestLog) {
-      if (timestamps.every((timestamp) => now - timestamp >= RATE_LIMIT_WINDOW_MS)) requestLog.delete(key);
-    }
-  }
-  const recent = (requestLog.get(clientId) || []).filter((timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT_MAX_REQUESTS) {
-    requestLog.set(clientId, recent);
-    return false;
-  }
-  recent.push(now);
-  requestLog.set(clientId, recent);
-  return true;
 }

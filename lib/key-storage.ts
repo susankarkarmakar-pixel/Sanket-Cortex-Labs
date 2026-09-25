@@ -13,8 +13,11 @@ export interface ApiKeys {
 
 const STORAGE_KEY = "susan_api_keys_v1";
 const OLD_STORAGE_KEY = "omnikey_api_keys_v1";
+const SESSION_STORAGE_KEY = "susan_api_keys_session_v1";
 
-export function saveKeys(keys: ApiKeys): void {
+export type KeyStorageMode = "session" | "browser";
+
+export function saveKeys(keys: ApiKeys, mode: KeyStorageMode = "browser"): void {
   if (typeof window === "undefined") return;
   const cleanedKeys: ApiKeys = {};
   for (const key of Object.keys(keys) as Array<keyof ApiKeys>) {
@@ -22,7 +25,15 @@ export function saveKeys(keys: ApiKeys): void {
     if (value) cleanedKeys[key] = value;
   }
   try {
-    localStorage.setItem(STORAGE_KEY, btoa(JSON.stringify(cleanedKeys)));
+    const encoded = btoa(JSON.stringify(cleanedKeys));
+    if (mode === "session") {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, encoded);
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(OLD_STORAGE_KEY);
+    } else {
+      localStorage.setItem(STORAGE_KEY, encoded);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
     window.dispatchEvent(new Event("keys-updated"));
   } catch (error) {
     console.error("Failed to save API keys", error);
@@ -31,7 +42,8 @@ export function saveKeys(keys: ApiKeys): void {
 
 export function getKeys(): ApiKeys {
   if (typeof window === "undefined") return {};
-  let stored = localStorage.getItem(STORAGE_KEY);
+  let stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (!stored) stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) {
     stored = localStorage.getItem(OLD_STORAGE_KEY);
     if (stored) {
@@ -57,5 +69,11 @@ export function clearKeys(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(OLD_STORAGE_KEY);
+  sessionStorage.removeItem(SESSION_STORAGE_KEY);
   window.dispatchEvent(new Event("keys-updated"));
+}
+
+export function getKeyStorageMode(): KeyStorageMode {
+  if (typeof window === "undefined") return "session";
+  return sessionStorage.getItem(SESSION_STORAGE_KEY) ? "session" : "browser";
 }

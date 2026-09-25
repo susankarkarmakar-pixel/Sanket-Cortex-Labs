@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Lock, Trash2, ExternalLink } from "lucide-react";
 import { ApiKeyInput } from "./api-key-input";
-import { saveKeys, getKeys, clearKeys, ApiKeys } from "@/lib/key-storage";
+import { saveKeys, getKeys, clearKeys, getKeyStorageMode, ApiKeys, KeyStorageMode } from "@/lib/key-storage";
 import { FREE_TIER_DIRECTORY, MODELS_METADATA } from "@/lib/ai-providers";
 
 interface SettingsModalProps {
@@ -15,6 +15,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [keys, setKeys] = useState<ApiKeys>({});
   const [savedKeys, setSavedKeys] = useState<ApiKeys>({});
   const [toast, setToast] = useState(false);
+  const [storageMode, setStorageMode] = useState<KeyStorageMode>("session");
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -25,10 +26,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     if (isOpen) {
       previouslyFocused.current = document.activeElement as HTMLElement | null;
       const storedKeys = getKeys();
+      const storedMode = getKeyStorageMode();
       // Use setTimeout to avoid synchronous setState inside effect
       setTimeout(() => {
         setKeys(storedKeys);
         setSavedKeys(storedKeys);
+        setStorageMode(storedMode);
       }, 0);
       window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     }
@@ -69,7 +72,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   if (!isOpen) return null;
 
   const handleSave = () => {
-    saveKeys(keys);
+    saveKeys(keys, storageMode);
     setSavedKeys(keys);
 
     // Show toast
@@ -109,15 +112,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </button>
         </div>
         <p className="text-sm text-text-muted mb-6">
-          Keys stay in this browser until you remove them. Each chat request sends the selected key through this app to the chosen provider; Susan AI does not persist it on the server.
+          Each chat request sends the selected key through this app to the chosen provider; Susan AI does not persist it on the server.
         </p>
 
         <div role="alert" className="mb-5 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-950">
           <p className="font-semibold">Important: browser-local BYOK storage</p>
           <p className="mt-1 text-xs leading-relaxed">
-            Your keys are stored in this browser using Base64 encoding. Base64 is <strong>not encryption</strong>. Use provider-restricted keys with minimal permissions, avoid shared devices, and clear your keys before handing this device to someone else.
+            Session-only keys are removed when the browser session ends. If you enable browser persistence, keys are stored using Base64 encoding; Base64 is <strong>not encryption</strong>. Use provider-restricted keys with minimal permissions, avoid shared devices, and clear your keys before handing this device to someone else.
           </p>
         </div>
+
+        <label className="mb-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border-main/50 bg-black/[.02] p-3">
+          <input type="checkbox" checked={storageMode === "browser"} onChange={(event) => setStorageMode(event.target.checked ? "browser" : "session")} className="mt-0.5 h-4 w-4 accent-accent" />
+          <span className="text-sm text-text-main">
+            <span className="block font-semibold">Remember keys in this browser</span>
+            <span className="mt-1 block text-xs leading-relaxed text-text-muted">Off by default: session-only keys are removed when this browser session ends. Turn this on only on a trusted personal device.</span>
+          </span>
+        </label>
 
         <div className="mb-5 rounded-xl border border-green-600/20 bg-green-50/60 p-3">
           <h3 className="mb-2 text-sm font-semibold text-text-main">Free-tier options</h3>
