@@ -10,16 +10,19 @@ The chat route validates JSON content type, body size, message count and length,
 
 ## Rate limiting
 
-The repository includes a bounded in-memory limiter as a single-instance baseline. The limiter intentionally trusts `x-forwarded-for` and `x-real-ip` only when the deployment sets:
+The repository supports a shared Upstash Redis REST limiter and a bounded in-memory development fallback. The limiter intentionally trusts `x-forwarded-for` and `x-real-ip` only when the deployment sets:
 
 ```env
 TRUST_PROXY=true
+RATE_LIMIT_BACKEND=upstash
 RATE_LIMIT_MAX_REQUESTS=30
+UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-secret-token
 ```
 
 Do not set `TRUST_PROXY=true` unless the hosting platform strips and rewrites forwarding headers from a trusted edge proxy. Without it, requests use one anonymous bucket, which is safe against spoofed client IPs but not suitable for a public multi-user deployment.
 
-For multi-instance production, configure the hosting provider's native rate limiter or replace the in-memory implementation with a shared Redis/Upstash-backed limiter before public launch. The current implementation must not be represented as a globally shared production limiter.
+For local development only, use `RATE_LIMIT_BACKEND=memory`. If `RATE_LIMIT_BACKEND=upstash` is selected but credentials are missing or the service is unavailable, the chat route fails closed with `503` rather than silently disabling abuse protection. A hosting provider's native limiter is also acceptable if it runs before the application route.
 
 ## Release gates
 

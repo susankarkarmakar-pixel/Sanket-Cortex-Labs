@@ -1,6 +1,6 @@
 import { convertToModelMessages, streamText } from "ai";
 import { getModelConfig, isInstantChatProvider, MODELS_METADATA } from "@/lib/ai-providers";
-import { getClientIdentifier, isWithinRateLimit, RATE_LIMIT_RETRY_AFTER_SECONDS } from "@/lib/rate-limit";
+import { enforceRateLimit, getClientIdentifier, RateLimitUnavailableError, RATE_LIMIT_RETRY_AFTER_SECONDS } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 const MAX_MESSAGES = 100;
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const contentLength = Number(req.headers.get("content-length") || 0);
     if (contentLength > MAX_BODY_BYTES) return jsonError("Request is too large. Keep attachments under 20 MB total.", 413);
     const clientId = getClientIdentifier(req);
-    if (!isWithinRateLimit(clientId)) return jsonError("Too many requests. Please wait a moment and try again.", 429, { "Retry-After": String(RATE_LIMIT_RETRY_AFTER_SECONDS) });
+    if (!(await enforceRateLimit(clientId))) return jsonError("Too many requests. Please wait a moment and try again.", 429, { "Retry-After": String(RATE_LIMIT_RETRY_AFTER_SECONDS) });
 
     const body: unknown = await req.json();
     const parsedBodyBytes = new TextEncoder().encode(JSON.stringify(body)).byteLength;
@@ -49,6 +49,7 @@ export async function POST(req: Request) {
     const status = typeof err.status === "number" ? err.status : 500;
     const rawMessage = typeof err.message === "string" ? err.message : "";
     const message = rawMessage.toLowerCase();
+    if (error instanceof RateLimitUnavailableError) return jsonError("Security rate limiting is temporarily unavailable. Please try again shortly.", 503, { "Retry-After": "30" });
     if (message.includes("json") || message.includes("unexpected end")) return jsonError("Invalid JSON request body.", 400);
     if (rawMessage.includes("asynchronous") || rawMessage.includes("instant chat")) return jsonError(rawMessage, 400);
     if (status === 401 || status === 403) return jsonError("The API key was rejected by the provider.", 401);

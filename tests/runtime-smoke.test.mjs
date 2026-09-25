@@ -120,3 +120,20 @@ test("chat errors are not cacheable", async () => {
   assert.equal(response.status, 400);
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
+
+test("rate limiting returns Retry-After after the configured burst", async () => {
+  let throttled;
+  for (let index = 0; index < 35; index += 1) {
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
+    if (response.status === 429) {
+      throttled = response;
+      break;
+    }
+  }
+  assert.ok(throttled, "expected the memory limiter to throttle the burst");
+  assert.equal(throttled.headers.get("retry-after"), "60");
+});
