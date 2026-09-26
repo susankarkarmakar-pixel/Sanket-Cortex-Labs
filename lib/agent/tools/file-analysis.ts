@@ -2,7 +2,8 @@ import { ToolDefinition } from "@/lib/agent/types";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: string; }
-export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; }
+export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
+export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; }
 export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
@@ -67,7 +68,14 @@ function parseCsv(text: string): CsvTableSummary {
   const columns = (records.shift() || []).map((column, index) => column.trim() || `Column ${index + 1}`);
   const rows = records.slice(0, 8).map((record) => columns.map((_, index) => record[index]?.trim() || ""));
   const missingValueCount = records.reduce((count, record) => count + columns.filter((_, index) => !record[index]?.trim()).length, 0);
-  return { columns, rows, rowCount: records.length, missingValueCount };
+  const numericStats = columns.flatMap((column, columnIndex) => {
+    const values = records.map((record) => Number(record[columnIndex])).filter((value) => Number.isFinite(value));
+    const nonEmptyCount = records.filter((record) => record[columnIndex]?.trim()).length;
+    if (values.length === 0 || values.length < Math.max(1, Math.ceil(nonEmptyCount * 0.8))) return [];
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return [{ column, count: values.length, average: total / values.length, minimum: Math.min(...values), maximum: Math.max(...values) }];
+  });
+  return { columns, rows, rowCount: records.length, missingValueCount, numericStats };
 }
 
 function parseCsvRecords(text: string): string[][] {
