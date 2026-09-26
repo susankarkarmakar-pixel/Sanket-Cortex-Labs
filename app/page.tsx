@@ -21,11 +21,15 @@ import { createAgentTask, transitionTask, updateStepStatus } from "@/lib/agent/a
 import { planAgentTask } from "@/lib/agent/planner";
 import { AgentExecutionOutcome, executeFirstToolStep } from "@/lib/agent/executor";
 import { useAgentTasks } from "@/hooks/use-agent-tasks";
+import { WorkspaceHub, WorkspaceSection } from "@/components/workspace/workspace-hub";
+import { JulesWorkspace } from "@/components/agent/jules-workspace";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeSection, setActiveSection] = useState<WorkspaceSection>("home");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"general" | "providers" | "keys">("general");
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelOption>("google");
   const [input, setInput] = useState("");
@@ -51,7 +55,7 @@ export default function Home() {
       // This effect synchronizes the selected model with externally stored BYOK keys.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedModel(preferred);
-      if (preferred === "jules") setMode("agent");
+      if (preferred === "jules") { setMode("agent"); setActiveSection("agent"); }
     }
   }, [keyVersion, keys, selectedModel, setMode]);
 
@@ -91,7 +95,7 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const handleOpenSettings = () => setIsSettingsOpen(true);
+    const handleOpenSettings = () => { setSettingsTab("general"); setIsSettingsOpen(true); };
     document.addEventListener("open-settings", handleOpenSettings);
     return () => {
       document.removeEventListener("open-settings", handleOpenSettings);
@@ -100,7 +104,14 @@ export default function Home() {
 
   const handleLoadConversation = (id: string) => {
     const conversation = loadSavedConversation(id);
-    if (conversation) setSelectedModel(conversation.model === "manus" ? "deepseek" : conversation.model as ModelOption);
+    if (conversation) {
+      if (conversation.model === "manus" || conversation.model === "jules") {
+        const fallback = ["google", "openrouter", "openai", "anthropic", "deepseek", "qwen", "kimi", "sarvam", "huggingface"].find((provider) => getApiKey(provider, keys)) || "google";
+        setSelectedModel(fallback);
+      } else setSelectedModel(conversation.model as ModelOption);
+      setMode("chat");
+      setActiveSection("chat");
+    }
   };
 
   const handleSend = async (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
@@ -120,6 +131,59 @@ export default function Home() {
       createExecutionEvent(task.id, "task-created", "Task created"),
       createExecutionEvent(task.id, "plan-created", `Plan created with ${task.steps.length} steps`),
     ]);
+  };
+  const ensureInstantChatModel = () => {
+    if (selectedModel !== "jules") return;
+    const fallback = ["google", "openrouter", "openai", "anthropic", "deepseek", "qwen", "kimi", "sarvam", "huggingface"].find((provider) => getApiKey(provider, keys)) || "google";
+    setSelectedModel(fallback);
+  };
+  const handleNewChat = () => {
+    ensureInstantChatModel();
+    setActiveSection("chat");
+    setMode("chat");
+    startNewConversation();
+  };
+
+  const handleSidebarNavigate = (section: WorkspaceSection) => {
+    setActiveSection(section);
+    if (section === "home") {
+      ensureInstantChatModel();
+      setMode("chat");
+      startNewConversation();
+    } else if (section === "chat") {
+      ensureInstantChatModel();
+      setMode("chat");
+    } else if (section === "agent") {
+      setMode("agent");
+    }
+  };
+  const handleStartWorkspaceAgent = (goal: string, attachments: AgentAttachment[] = []) => {
+    ensureInstantChatModel();
+    setActiveSection("agent");
+    setMode("agent");
+    handleCreateAgentTask(goal, attachments);
+    setIsSidebarOpen(false);
+  };
+  const handleOpenWorkspaceChat = (prompt: string) => {
+    ensureInstantChatModel();
+    setActiveSection("chat");
+    setMode("chat");
+    startNewConversation();
+    setInput(prompt);
+    setIsSidebarOpen(false);
+  };
+  const handleSelectPinnedAgent = (agent: "General Assistant" | "Data & Report Agent" | "Study & Research Agent") => {
+    if (agent === "Data & Report Agent") {
+      setActiveSection("documents");
+      setIsSidebarOpen(false);
+      return;
+    }
+    ensureInstantChatModel();
+    setActiveSection("chat");
+    setMode("chat");
+    startNewConversation();
+    setInput(agent === "Study & Research Agent" ? "Help me study and research a topic. Ask me what topic I want to explore, then organize the work into a clear study plan." : "");
+    setIsSidebarOpen(false);
   };
   const handleRunAgentTask = async (startingTask?: AgentTask) => {
     const taskToRun = startingTask || activeAgentTask;
@@ -241,9 +305,72 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} collapsed={isSidebarCollapsed} onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)} selectedModel={selectedModel} onSelectModel={(model) => { setSelectedModel(model); if (model === "jules") setMode("agent"); else if (selectedModel === "jules") setMode("chat"); }} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
-      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onApproveAgentStep={handleApproveAgentStep} onRejectAgentStep={handleRejectAgentStep} onRollbackAgentTask={handleRollbackAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        activeSection={activeSection}
+        onNavigate={handleSidebarNavigate}
+        onSelectPinnedAgent={handleSelectPinnedAgent}
+        onOpenSettings={() => { setSettingsTab("general"); setIsSettingsOpen(true); }}
+        collapsed={isSidebarCollapsed}
+        onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+        selectedModel={selectedModel}
+        onSelectModel={(model) => {
+          setSelectedModel(model);
+          if (model === "jules") { setMode("agent"); setActiveSection("agent"); }
+          else if (selectedModel === "jules") { setMode("chat"); setActiveSection("chat"); }
+        }}
+        onNewChat={handleNewChat}
+        onLoadConversation={handleLoadConversation}
+        currentConversationId={currentConversationId}
+        onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }}
+      />
+      {activeSection === "projects" || activeSection === "workflows" || activeSection === "knowledge" || activeSection === "plugins" || activeSection === "documents" ? (
+        <WorkspaceHub
+          section={activeSection}
+          onStartAgent={handleStartWorkspaceAgent}
+          onOpenChat={handleOpenWorkspaceChat}
+          onOpenSettings={() => { setSettingsTab("providers"); setIsSettingsOpen(true); }}
+          onOpenSection={(section) => setActiveSection(section)}
+        />
+      ) : activeSection === "agent" && selectedModel === "jules" ? (
+        <JulesWorkspace apiKey={keys.jules || ""} onOpenSettings={() => { setSettingsTab("keys"); setIsSettingsOpen(true); }} onOpenSidebar={() => setIsSidebarOpen(true)} />
+      ) : (
+        <ChatArea
+          mode={mode}
+          onModeChange={(nextMode) => {
+            if (nextMode === "chat") ensureInstantChatModel();
+            setMode(nextMode);
+            setActiveSection(nextMode);
+          }}
+          activeAgentTask={activeAgentTask}
+          agentExecution={agentExecution}
+          executionEvents={executionEvents}
+          onCreateAgentTask={handleCreateAgentTask}
+          onRunAgentTask={handleRunAgentTask}
+          onApproveAgentStep={handleApproveAgentStep}
+          onRejectAgentStep={handleRejectAgentStep}
+          onRollbackAgentTask={handleRollbackAgentTask}
+          onPauseAgentTask={handlePauseAgentTask}
+          onResumeAgentTask={handleResumeAgentTask}
+          onRetryAgentTask={handleRetryAgentTask}
+          onCancelAgentTask={handleCancelAgentTask}
+          onClearAgentTask={handleClearAgentTask}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+          selectedModel={selectedModel}
+          messages={displayMessages}
+          input={input}
+          onInputChange={(event) => setInput(event.target.value)}
+          onSend={handleSend}
+          isLoading={isLoading}
+          stop={stop}
+          error={error}
+          onRetry={regenerate}
+          conversationTitle={conversationTitle}
+          onPrompt={setInput}
+        />
+      )}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} initialTab={settingsTab} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );

@@ -3,12 +3,18 @@ import { fileAnalysisTool } from "@/lib/agent/tools/file-analysis";
 import { CsvTableSummary, FileAnalysisOutput, SheetTableSummary } from "@/lib/agent/tools/file-analysis";
 import { AgentError, AgentTask, ToolExecutionContext } from "@/lib/agent/types";
 import { transitionTask, updateStepStatus } from "@/lib/agent/agent-state";
+import { isPluginToolEnabled, recordPluginActivity } from "@/lib/plugin-settings";
 
 export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; table?: CsvTableSummary; sheetTables?: SheetTableSummary[]; error?: AgentError; ok: boolean; }
 
 export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecutionOutcome> {
   const step = task.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
   if (!step || !step.toolId) return failure(task, "NO_EXECUTABLE_STEP", "No executable tool step is available yet. The remaining steps need the next orchestration phase.", false, "Create a new task or wait for the next orchestration phase.");
+  if (!isPluginToolEnabled(step.toolId)) {
+    const disabledTask = updateStepStatus(task, step.id, "failed");
+    recordToolActivity(step.toolId, false);
+    return failure({ ...disabledTask, status: "failed", updatedAt: new Date().toISOString() }, "TOOL_NOT_EXECUTABLE", `The ${step.toolId} tool is disabled in Plugins.`, false, "Open Plugins and enable this tool, then retry the task.");
+  }
 
   const context: ToolExecutionContext = { taskId: task.id, stepId: step.id, signal: new AbortController().signal, requestApproval: async () => false };
   let runningTask = transitionTask(task, "running");
@@ -27,9 +33,11 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
     try {
       const result = await fileAnalysisTool.execute({ filename: attachment.filename, mediaType: attachment.mediaType, dataUrl: attachment.dataUrl }, context);
       const completedTask = updateStepStatus(runningTask, step.id, "completed");
+      recordToolActivity(step.toolId, true);
       return { task: finalizeAfterTool(completedTask), ok: true, message: "File Analysis completed successfully.", output: formatFileOutput(result), table: result.table, sheetTables: result.sheetTables };
     } catch (error) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
+      recordToolActivity(step.toolId, false);
       return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "FILE_ANALYSIS_FAILED", error instanceof Error ? error.message : "File Analysis could not complete.", true, "Check the file format and size, then retry the failed step.");
     }
   }
@@ -42,11 +50,18 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
   try {
     const result = await calculatorTool.execute({ expression: extractExpression(task.goal) }, context);
     const completedTask = updateStepStatus(runningTask, step.id, "completed");
+    recordToolActivity(step.toolId, true);
     return { task: finalizeAfterTool(completedTask), ok: true, message: "Calculator completed successfully.", output: `${result.expression} = ${result.value}` };
   } catch (error) {
     const failedTask = updateStepStatus(runningTask, step.id, "failed");
+    recordToolActivity(step.toolId, false);
     return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "CALCULATION_FAILED", error instanceof Error ? error.message : "Calculator could not complete the expression.", true, "Check the arithmetic expression and retry the failed step.");
   }
+}
+
+function recordToolActivity(toolId: string, ok: boolean): void {
+  const label = toolId === "file-analysis" ? "File Analysis" : toolId === "calculator" ? "Calculator" : "Agent tool";
+  recordPluginActivity({ kind: "tool-run", itemId: toolId, label, ok, message: ok ? "Task step completed." : "Task step failed or was disabled." });
 }
 
 function failure(task: AgentTask, code: AgentError["code"], message: string, retryable: boolean, recoveryHint: string): AgentExecutionOutcome {

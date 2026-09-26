@@ -23,6 +23,13 @@ const MAX_GOAL_LENGTH = 2_000;
 const MAX_FILES = 3;
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
 const ACCEPTED_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]);
+const QUICK_ACTIONS = [
+  { label: "Analyze file", prompt: "Analyze the attached file and summarize its key findings." },
+  { label: "Create chart", prompt: "Analyze the attached data and recommend useful charts for its most important trends." },
+  { label: "Generate report", prompt: "Analyze the attached data and prepare a concise report with key findings and limitations." },
+  { label: "Write document", prompt: "Help me draft a document. Use the attached files and my instructions as the source material." },
+  { label: "More tools", prompt: "I want to use a supported Agent tool. Help me with a safe calculation or analysis of an attached file." },
+];
 
 export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTask, onRollbackTask, onPauseTask, onResumeTask, onRetryTask, onCancelTask, onClearTask }: AgentTaskComposerProps) {
   const [goal, setGoal] = useState("");
@@ -91,14 +98,14 @@ export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTa
             {error && <p role="alert" className="text-xs font-medium text-red-600">{error}</p>}
           </form>
         )}
-        {!activeTask && <div className="mt-3 flex flex-wrap gap-2 border-t border-border-main/50 pt-3"><QuickAction label="Analyze file" /><QuickAction label="Create chart" /><QuickAction label="Generate report" /><QuickAction label="Write document" /><QuickAction label="More tools" /></div>}
+        {!activeTask && <div className="mt-3 flex flex-wrap gap-2 border-t border-border-main/50 pt-3">{QUICK_ACTIONS.map((action) => <QuickAction key={action.label} label={action.label} onClick={() => { setGoal(action.prompt); setError(null); }} />)}</div>}
       </div>
       {!activeTask && <div className="flex items-center gap-2 px-1 text-xs text-text-muted"><Plus className="h-3.5 w-3.5 text-accent" />Try a specific goal; the Agent will turn it into a safe first plan.</div>}
     </section>
   );
 }
 
-function QuickAction({ label }: { label: string }) { return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="rounded-lg border border-border-main/70 bg-bg-main px-3 py-1.5 text-[10px] font-semibold text-text-muted hover:bg-cream-highlight hover:text-accent">{label}</button>; }
+function QuickAction({ label, onClick }: { label: string; onClick: () => void }) { return <button type="button" onClick={onClick} className="rounded-lg border border-border-main/70 bg-bg-main px-3 py-1.5 text-[10px] font-semibold text-text-muted hover:bg-cream-highlight hover:text-accent">{label}</button>; }
 
 async function toAgentAttachment(file: File): Promise<AgentAttachment> {
   const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error || new Error(`Could not read ${file.name}`)); reader.readAsDataURL(file); });

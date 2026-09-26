@@ -10,6 +10,10 @@ import { MODELS_METADATA } from "@/lib/ai-providers";
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  activeSection: "home" | "chat" | "agent" | "projects" | "workflows" | "knowledge" | "plugins" | "documents";
+  onNavigate: (section: SidebarProps["activeSection"]) => void;
+  onSelectPinnedAgent: (agent: "General Assistant" | "Data & Report Agent" | "Study & Research Agent") => void;
+  onOpenSettings: () => void;
   selectedModel: ModelOption;
   onSelectModel: (model: ModelOption) => void;
   onNewChat: () => void;
@@ -23,6 +27,10 @@ interface SidebarProps {
 export function Sidebar({
   isOpen,
   onClose,
+  activeSection,
+  onNavigate,
+  onSelectPinnedAgent,
+  onOpenSettings,
   selectedModel,
   onSelectModel,
   onNewChat,
@@ -45,6 +53,15 @@ export function Sidebar({
     window.addEventListener('conversations-updated', handleUpdate);
     return () => window.removeEventListener('conversations-updated', handleUpdate);
   }, []);
+
+  const navigate = (section: SidebarProps["activeSection"]) => {
+    onNavigate(section);
+    if (window.innerWidth < 1024) onClose();
+  };
+  const choosePinnedAgent = (agent: NonNullable<SidebarProps["onSelectPinnedAgent"]> extends (value: infer T) => void ? T : never) => {
+    onSelectPinnedAgent(agent);
+    if (window.innerWidth < 1024) onClose();
+  };
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -132,6 +149,7 @@ export function Sidebar({
           <button
             onClick={() => {
               onNewChat();
+              onNavigate("chat");
               if (window.innerWidth < 1024) onClose();
             }}
             title="New Chat"
@@ -141,18 +159,22 @@ export function Sidebar({
             {!collapsed && "New Chat"}
           </button>
 
-          <nav className={cn("mb-5 space-y-1", collapsed && "hidden")} aria-label="Primary navigation">
-            <SidebarNavItem icon={<Home className="h-4 w-4" />} label="Home" onClick={() => window.location.reload()} />
-            <SidebarNavItem icon={<MessageSquare className="h-4 w-4" />} label="Chat" />
-            <SidebarNavItem icon={<Bot className="h-4 w-4" />} label="Agent Mode" active />
-            <SidebarNavItem icon={<FolderKanban className="h-4 w-4" />} label="Projects" />
-            <SidebarNavItem icon={<Workflow className="h-4 w-4" />} label="Workflows" />
-            <SidebarNavItem icon={<Network className="h-4 w-4" />} label="Knowledge Base" />
-            <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Plugins" />
-            <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Documents" />
+          <nav className="mb-5 space-y-1" aria-label="Primary navigation">
+            <SidebarNavItem icon={<Home className="h-4 w-4" />} label="Home" active={activeSection === "home"} collapsed={collapsed} onClick={() => navigate("home")} />
+            <SidebarNavItem icon={<MessageSquare className="h-4 w-4" />} label="Chat" active={activeSection === "chat"} collapsed={collapsed} onClick={() => navigate("chat")} />
+            <SidebarNavItem icon={<Bot className="h-4 w-4" />} label="Agent Mode" active={activeSection === "agent"} collapsed={collapsed} onClick={() => navigate("agent")} />
+            <SidebarNavItem icon={<FolderKanban className="h-4 w-4" />} label="Projects" active={activeSection === "projects"} collapsed={collapsed} onClick={() => navigate("projects")} />
+            <SidebarNavItem icon={<Workflow className="h-4 w-4" />} label="Workflows" active={activeSection === "workflows"} collapsed={collapsed} onClick={() => navigate("workflows")} />
+            <SidebarNavItem icon={<Network className="h-4 w-4" />} label="Knowledge Base" active={activeSection === "knowledge"} collapsed={collapsed} onClick={() => navigate("knowledge")} />
+            <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Plugins" active={activeSection === "plugins"} collapsed={collapsed} onClick={() => navigate("plugins")} />
+            <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Documents" active={activeSection === "documents"} collapsed={collapsed} onClick={() => navigate("documents")} />
           </nav>
-          {!collapsed && <><div className="mb-3 flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45"><span>Pinned agents</span><span>⌃</span></div>
-          <div className="mb-4 space-y-1"><PinnedAgent label="General Assistant" /><PinnedAgent label="Data & Report Agent" /><PinnedAgent label="Study & Research Agent" /></div></>}
+          {!collapsed && <div className="mb-3 flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45"><span>Pinned agents</span><span>⌃</span></div>}
+          <div className={cn("mb-4 space-y-1", collapsed && "mb-2")}>
+            <PinnedAgent label="General Assistant" collapsed={collapsed} onClick={() => choosePinnedAgent("General Assistant")} />
+            <PinnedAgent label="Data & Report Agent" collapsed={collapsed} onClick={() => choosePinnedAgent("Data & Report Agent")} />
+            <PinnedAgent label="Study & Research Agent" collapsed={collapsed} onClick={() => choosePinnedAgent("Study & Research Agent")} />
+          </div>
 
           {/* Chat History */}
           <div className={cn("min-h-0 flex-1 pr-1", collapsed && "hidden")}>
@@ -173,14 +195,16 @@ export function Sidebar({
                         const date = new Date(conv.date);
                         const dateStr = isSameDay(date, new Date()) ? date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
                         return (
-                          <button key={conv.id} type="button" onClick={() => { onLoadConversation(conv.id); if (window.innerWidth < 1024) onClose(); }} className={cn("group relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl border px-2.5 py-2 text-left text-sm transition-colors", isActive ? "border-white/15 bg-sidebar-cocoa-soft text-white shadow-sm" : "border-transparent text-white/70 hover:border-white/10 hover:bg-white/10 hover:text-white")}>
-                            <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px]", isActive ? "bg-cream-highlight text-sidebar-cocoa" : "bg-white/10 text-white/80")}>{IconStr}</span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate font-medium leading-5">{conv.title || "New Conversation"}</span>
-                              <span className="mt-0.5 block truncate text-[10px] text-white/40">{meta?.name || conv.model} · {dateStr}</span>
-                            </span>
-                            <span role="button" tabIndex={0} aria-label={`Delete ${conv.title}`} onClick={(event) => handleDelete(event, conv.id)} className={cn("shrink-0 rounded-md p-1 text-white/30 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-200 group-hover:opacity-100", isActive && "opacity-100")}><Trash2 className="h-3.5 w-3.5" /></span>
-                          </button>
+                          <div key={conv.id} className={cn("group flex items-center overflow-hidden rounded-xl border transition-colors", isActive ? "border-white/15 bg-sidebar-cocoa-soft text-white shadow-sm" : "border-transparent text-white/70 hover:border-white/10 hover:bg-white/10 hover:text-white")}>
+                            <button type="button" aria-current={isActive ? "page" : undefined} onClick={() => { onNavigate("chat"); onLoadConversation(conv.id); if (window.innerWidth < 1024) onClose(); }} className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-2 text-left text-sm">
+                              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px]", isActive ? "bg-cream-highlight text-sidebar-cocoa" : "bg-white/10 text-white/80")}>{IconStr}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-medium leading-5">{conv.title || "New Conversation"}</span>
+                                <span className="mt-0.5 block truncate text-[10px] text-white/40">{meta?.name || conv.model} · {dateStr}</span>
+                              </span>
+                            </button>
+                            <button type="button" aria-label={`Delete ${conv.title || "conversation"}`} onClick={(event) => handleDelete(event, conv.id)} className={cn("mr-1 shrink-0 rounded-md p-1.5 text-white/35 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-200 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100", isActive && "opacity-100")}><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
                         );
                       })}
                     </div>
@@ -206,7 +230,7 @@ export function Sidebar({
         {/* Footer */}
         <div className={cn("border-t border-white/10 flex flex-col gap-3", collapsed ? "items-center p-3" : "p-5")}>
           <button
-            onClick={() => document.dispatchEvent(new CustomEvent('open-settings'))}
+            onClick={onOpenSettings}
             title="Settings"
             className={cn("flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 text-sm font-medium", collapsed ? "justify-center" : "w-full")}
           >
@@ -230,12 +254,12 @@ export function Sidebar({
   );
 }
 
-function SidebarNavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }) {
-  return <button type="button" onClick={onClick || (() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label })))} className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors", active ? "bg-sidebar-cocoa-soft text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}><span className={active ? "text-cream-highlight" : "text-white/65"}>{icon}</span><span>{label}</span>{active && <span className="ml-auto rounded-full bg-cream-highlight px-2 py-0.5 text-[9px] font-bold text-sidebar-cocoa">NEW</span>}</button>;
+function SidebarNavItem({ icon, label, active = false, collapsed, onClick }: { icon: React.ReactNode; label: string; active?: boolean; collapsed: boolean; onClick: () => void }) {
+  return <button type="button" onClick={onClick} aria-label={collapsed ? label : undefined} aria-current={active ? "page" : undefined} title={collapsed ? label : undefined} className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors", collapsed && "justify-center px-2", active ? "bg-sidebar-cocoa-soft text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}><span className={active ? "text-cream-highlight" : "text-white/65"}>{icon}</span>{!collapsed && <span>{label}</span>}</button>;
 }
 
-function PinnedAgent({ label }: { label: string }) {
-  return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"><span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/10 text-cream-highlight">✦</span><span className="truncate">{label}</span></button>;
+function PinnedAgent({ label, collapsed, onClick }: { label: "General Assistant" | "Data & Report Agent" | "Study & Research Agent"; collapsed: boolean; onClick: () => void }) {
+  return <button type="button" onClick={onClick} aria-label={collapsed ? label : undefined} title={collapsed ? label : undefined} className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white", collapsed && "justify-center px-2")}><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-cream-highlight">✦</span>{!collapsed && <span className="truncate">{label}</span>}</button>;
 }
 
 function isSameDay(first: Date, second: Date): boolean {

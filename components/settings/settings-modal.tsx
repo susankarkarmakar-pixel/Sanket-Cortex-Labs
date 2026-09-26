@@ -11,6 +11,7 @@ import { addCustomProvider, CustomProvider, getCustomProviders, isAllowedBaseUrl
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: "general" | "providers" | "keys";
 }
 
 type SettingsTab = "general" | "providers" | "keys" | "appearance" | "chat" | "advanced";
@@ -24,7 +25,7 @@ const SETTINGS_TABS: Array<{ id: SettingsTab; label: string; description: string
   { id: "advanced", label: "Advanced", description: "Developer options", icon: SlidersHorizontal },
 ];
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, initialTab = "general" }: SettingsModalProps) {
   const [keys, setKeys] = useState<ApiKeys>({});
   const [savedKeys, setSavedKeys] = useState<ApiKeys>({});
   const [toast, setToast] = useState(false);
@@ -49,6 +50,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       const storedMode = getKeyStorageMode();
       // Use setTimeout to avoid synchronous setState inside effect
       setTimeout(() => {
+        setActiveTab(initialTab);
         setKeys(storedKeys);
         setSavedKeys(storedKeys);
         setStorageMode(storedMode);
@@ -60,7 +62,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       }, 0);
       window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     }
-  }, [isOpen]);
+  }, [initialTab, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;

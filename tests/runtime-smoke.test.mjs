@@ -70,6 +70,72 @@ test("chat route rejects async-only providers", async () => {
   assert.deepEqual(await response.json(), { error: "This provider is not available for instant chat." });
 });
 
+test("Jules route requires JSON and a valid API key", async () => {
+  const wrongContentType = await fetch(`${baseUrl}/api/jules`, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: "not-json",
+  });
+  assert.equal(wrongContentType.status, 415);
+
+  const missingKey = await fetch(`${baseUrl}/api/jules`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "list-sources" }),
+  });
+  assert.equal(missingKey.status, 400);
+  assert.deepEqual(await missingKey.json(), { error: "A valid Jules API key is required. Add or re-check it in Settings." });
+});
+
+test("Jules route rejects invalid actions, source names, branches, and session IDs before upstream calls", async () => {
+  const post = (body) => fetch(`${baseUrl}/api/jules`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ apiKey: "placeholder-test-key", ...body }),
+  });
+
+  const invalidAction = await post({ action: "arbitrary-url" });
+  assert.equal(invalidAction.status, 400);
+  assert.deepEqual(await invalidAction.json(), { error: "Unsupported Jules action." });
+
+  const invalidSource = await post({ action: "create-session", source: "https://attacker.invalid", branch: "main", prompt: "Fix a test" });
+  assert.equal(invalidSource.status, 400);
+  assert.deepEqual(await invalidSource.json(), { error: "Select a valid Jules repository source." });
+
+  const invalidBranch = await post({ action: "create-session", source: "sources/github-owner-repo", branch: "../private", prompt: "Fix a test" });
+  assert.equal(invalidBranch.status, 400);
+  assert.deepEqual(await invalidBranch.json(), { error: "Select a valid repository branch." });
+
+  const invalidSession = await post({ action: "get-session", sessionId: "sessions/123" });
+  assert.equal(invalidSession.status, 400);
+  assert.deepEqual(await invalidSession.json(), { error: "A valid Jules session ID is required." });
+});
+
+test("provider connection route validates content type, keys, and instant-chat support", async () => {
+  const wrongContentType = await fetch(`${baseUrl}/api/providers/test`, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: "not-json",
+  });
+  assert.equal(wrongContentType.status, 415);
+
+  const missingKey = await fetch(`${baseUrl}/api/providers/test`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ provider: "openai" }),
+  });
+  assert.equal(missingKey.status, 400);
+  assert.deepEqual(await missingKey.json(), { error: "A valid provider API key is required." });
+
+  const asyncOnly = await fetch(`${baseUrl}/api/providers/test`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ provider: "jules", apiKey: "placeholder-test-key" }),
+  });
+  assert.equal(asyncOnly.status, 400);
+  assert.deepEqual(await asyncOnly.json(), { error: "This provider does not support an instant connection test." });
+});
+
 test("chat route recognizes every instant-chat provider before credential validation", async () => {
   const providers = ["deepseek", "anthropic", "huggingface", "google", "openai", "qwen", "kimi", "sarvam", "openrouter"];
   for (const provider of providers) {

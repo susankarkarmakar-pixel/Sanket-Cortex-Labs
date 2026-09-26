@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Bot, Menu, MessageSquare, Settings, Sparkles } from "lucide-react";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { AgentMode } from "@/lib/agent/mode";
@@ -56,16 +56,6 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
   const modelName = modelMetadata?.name || customProvider?.name || "Selected provider";
   const canAttachFiles = modelMetadata?.capabilities.files ?? false;
   const attachmentSupportMessage = `${modelName} does not support file attachments. Choose a vision/file-capable model such as Claude, Gemini, or OpenAI.`;
-
-  useEffect(() => {
-    const handlePlaceholder = (event: Event) => {
-      const label = (event as CustomEvent<string>).detail;
-      setToastError(`${label} workspace is ready for the next implementation phase.`);
-      window.setTimeout(() => setToastError(null), 2600);
-    };
-    window.addEventListener("workspace-placeholder", handlePlaceholder);
-    return () => window.removeEventListener("workspace-placeholder", handlePlaceholder);
-  }, []);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
     if (!getApiKey(selectedModel)) {

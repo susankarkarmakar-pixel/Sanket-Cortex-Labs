@@ -34,6 +34,9 @@ The current UI is organized as a privacy-focused workspace with a navigation sid
 - **Agent Workspace:** Set a high-level goal, review the generated plan, follow execution activity, and inspect live output.
 - **Persistent Agent composer:** Attach supported files, use quick actions such as Analyze File and Generate Report, and submit new goals from the bottom workspace bar.
 - **Generated Files:** Export PDF, DOCX, and XLSX reports from the Agent workspace and track their ready state in the right rail.
+- **Working sidebar workspaces:** Create and manage local projects; save and search Knowledge Base notes; launch the supported calculator and file-analysis workflows; inspect built-in tools and provider connections.
+- **Local Documents:** Upload, search, download, and delete TXT, Markdown, CSV, JSON, PDF, DOCX, and XLSX files up to 4 MB each. Documents are stored in this browser and can be sent directly to Agent file analysis.
+- **Pinned agents:** Open the general chat, prefill a study/research prompt, or jump to Documents before starting a data report.
 - **Responsive experience:** Use the same workspace across desktop and mobile layouts.
 
 ## Features
@@ -45,6 +48,9 @@ The current UI is organized as a privacy-focused workspace with a navigation sid
 - Markdown, tables, links, and syntax-highlighted code blocks.
 - Responsive desktop and mobile layout.
 - Conversation autosave, JSON export/import, and clear-history controls.
+- Browser-local Projects and tagged Knowledge Base notes with search, edit, completion, and delete controls.
+- IndexedDB-backed local document library with download and Agent file-analysis handoff.
+- Sidebar navigation and pinned-agent actions wired to their real Chat, Agent, workspace, and Settings destinations.
 - Request validation, provider-safe errors, rate limiting, request-size limits, and secure default HTTP headers.
 - `GET /api/health` deployment smoke-test endpoint.
 
