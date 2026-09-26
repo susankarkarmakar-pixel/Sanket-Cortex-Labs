@@ -85,7 +85,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
   const isEmpty = input.trim().length === 0 && files.length === 0;
 
   return (
-    <div className="relative z-10 w-full bg-bg-main px-4 pb-4 pt-3 md:px-8">
+    <div className="relative z-10 w-full bg-bg-main px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pt-3 md:px-8">
       <form ref={formRef} onSubmit={handleSubmit} onDragOver={(event) => { if (canAttachFiles) event.preventDefault(); }} onDrop={(event) => { if (!canAttachFiles) return; event.preventDefault(); addFiles(event.dataTransfer.files); }} className="mx-auto max-w-5xl rounded-3xl border border-border-main/60 bg-surface p-3 shadow-sm transition-all focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5">
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 px-2 pb-2" aria-label="Selected attachments">
@@ -105,7 +105,7 @@ export function MessageInput({ input, onInputChange, onSubmit, isLoading, stop, 
           <button type="button" disabled={!canAttachFiles} onClick={() => fileInputRef.current?.click()} aria-label={canAttachFiles ? "Attach files" : "Attachments unavailable for this provider"} title={canAttachFiles ? "Attach files" : "Attachments unavailable for this provider"} className={cn("mb-1 flex shrink-0 items-center justify-center rounded-xl p-2.5 transition-colors", canAttachFiles ? "text-text-muted hover:bg-black/5 hover:text-text-main" : "cursor-not-allowed text-text-muted/40")}>
             <Paperclip className="h-4 w-4" />
           </button>
-          <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={handleKeyDown} aria-label="Message Susan AI" placeholder="How can I help you today?" className="min-h-[48px] max-h-[200px] flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 font-sans text-text-main outline-none placeholder:text-text-muted/60" rows={1} />
+          <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={handleKeyDown} aria-label="Message Susan AI" placeholder="How can I help you today?" className="min-h-[48px] min-w-0 flex-1 resize-none overflow-y-auto break-words bg-transparent px-2 py-3 font-sans text-text-main outline-none placeholder:text-text-muted/60 sm:px-3" rows={1} />
           <div className="mb-1 hidden items-center gap-2 rounded-full bg-cream-highlight/70 px-3 py-2 text-xs font-medium text-text-main sm:flex">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             <span className="max-w-[120px] truncate">{modelName}</span>

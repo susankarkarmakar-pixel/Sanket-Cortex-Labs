@@ -304,7 +304,7 @@ export default function Home() {
   }, [activeAgentTask, executionEvents, saveAgentTask, tasksReady]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-brand-blue">
+    <div className="flex h-dvh min-h-dvh overflow-hidden bg-brand-blue">
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -332,6 +332,7 @@ export default function Home() {
           onOpenChat={handleOpenWorkspaceChat}
           onOpenSettings={() => { setSettingsTab("providers"); setIsSettingsOpen(true); }}
           onOpenSection={(section) => setActiveSection(section)}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
         />
       ) : activeSection === "agent" && selectedModel === "jules" ? (
         <JulesWorkspace apiKey={keys.jules || ""} onOpenSettings={() => { setSettingsTab("keys"); setIsSettingsOpen(true); }} onOpenSidebar={() => setIsSidebarOpen(true)} />

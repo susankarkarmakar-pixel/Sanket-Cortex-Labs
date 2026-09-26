@@ -125,7 +125,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "general" }: Setti
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-[max(0.5rem,env(safe-area-inset-top))] sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -133,7 +133,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "general" }: Setti
       />
 
       {/* Modal */}
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="susan-settings-title" className="relative flex h-[min(860px,92vh)] w-full max-w-6xl flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#FCFAF5] shadow-2xl">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="susan-settings-title" className="relative flex h-[min(860px,calc(100dvh-1rem))] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/70 bg-[#FCFAF5] shadow-2xl sm:rounded-[26px]">
 
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border-main/50 px-6 py-5 md:px-8">
@@ -149,9 +149,10 @@ export function SettingsModal({ isOpen, onClose, initialTab = "general" }: Setti
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex min-h-0 flex-1">
-          <aside className="hidden w-[260px] shrink-0 border-r border-border-main/60 bg-[#FAF5EC] p-5 md:block"><nav className="space-y-1" aria-label="Settings sections">{SETTINGS_TABS.map((tab) => { const Icon = tab.icon; const selected = activeTab === tab.id; return <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex w-full items-center gap-3 rounded-xl p-3 text-left ${selected ? "bg-cream-highlight text-text-main" : "text-text-muted hover:bg-black/5"}`}><Icon className="h-5 w-5" /><span><span className="block text-sm font-semibold">{tab.label}</span><span className="block text-xs opacity-70">{tab.description}</span></span></button>; })}</nav></aside>
-          <main className="min-w-0 flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <aside className="hidden w-[260px] shrink-0 border-r border-border-main/60 bg-[#FAF5EC] p-5 md:block"><nav className="space-y-1" aria-label="Settings sections">{SETTINGS_TABS.map((tab) => { const Icon = tab.icon; const selected = activeTab === tab.id; return <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} aria-current={selected ? "page" : undefined} className={`flex w-full items-center gap-3 rounded-xl p-3 text-left ${selected ? "bg-cream-highlight text-text-main" : "text-text-muted hover:bg-black/5"}`}><Icon className="h-5 w-5" /><span><span className="block text-sm font-semibold">{tab.label}</span><span className="block text-xs opacity-70">{tab.description}</span></span></button>; })}</nav></aside>
+          <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-border-main/50 bg-[#FAF5EC] px-2 py-2 md:hidden" aria-label="Settings sections">{SETTINGS_TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} aria-current={activeTab === tab.id ? "page" : undefined} className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${activeTab === tab.id ? "bg-cream-highlight text-text-main" : "text-text-muted hover:bg-black/5"}`}><Icon className="h-4 w-4" />{tab.label}</button>; })}</nav>
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
             {activeTab === "keys" ? <>
         <div role="alert" className="mb-5 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-950">
           <p className="font-semibold">Important: browser-local BYOK storage</p>

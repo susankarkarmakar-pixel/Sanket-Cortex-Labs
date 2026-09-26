@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Settings, X, Trash2, Download, Upload, Trash, Info, Home, MessageSquare, Bot, FolderKanban, Workflow, Network, Puzzle, FileText, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector, ModelOption } from "./model-selector";
+import { PwaInstallButton } from "@/components/pwa/pwa-install-button";
 import { ConversationSummary, getConversations, deleteConversation, clearConversations, exportConversations, importConversations } from "@/lib/chat-storage";
 import { MODELS_METADATA } from "@/lib/ai-providers";
 
@@ -123,7 +124,7 @@ export function Sidebar({
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         "lg:static lg:inset-0"
       )}>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 custom-scrollbar">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 custom-scrollbar" style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top))" }}>
           {/* Header */}
           <div className={cn("flex items-center mb-7", collapsed ? "justify-center" : "justify-between")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -228,7 +229,7 @@ export function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className={cn("border-t border-white/10 flex flex-col gap-3", collapsed ? "items-center p-3" : "p-5")}>
+        <div className={cn("border-t border-white/10 flex flex-col gap-2", collapsed ? "items-center p-3" : "p-5")} style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}>
           <button
             onClick={onOpenSettings}
             title="Settings"
@@ -245,6 +246,7 @@ export function Sidebar({
             <Info className="w-4 h-4" />
             {!collapsed && <span>About</span>}
           </button>
+          <PwaInstallButton collapsed={collapsed} />
           {!collapsed && <div className="text-center text-[10px] text-white/40">
             © 2026 Sanket Pixel Technologies
           </div>}

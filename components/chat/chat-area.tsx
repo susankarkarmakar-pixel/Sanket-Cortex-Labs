@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Menu, MessageSquare, Settings, Sparkles } from "lucide-react";
+import { Bot, Menu, MessageSquare, PanelRightOpen, Settings, Sparkles } from "lucide-react";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { AgentMode } from "@/lib/agent/mode";
 import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
@@ -51,6 +51,7 @@ interface ChatAreaProps {
 
 export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onApproveAgentStep, onRejectAgentStep, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
+  const [isAgentPanelOpen, setIsAgentPanelOpen] = useState(false);
   const customProvider = getCustomProviders().find((provider) => provider.id === selectedModel);
   const modelMetadata = MODELS_METADATA[selectedModel as keyof typeof MODELS_METADATA];
   const modelName = modelMetadata?.name || customProvider?.name || "Selected provider";
@@ -70,7 +71,7 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
 
   return (
     <div className="relative flex h-full flex-1 flex-col overflow-hidden bg-bg-main">
-      <header className="z-20 flex h-[72px] shrink-0 items-center gap-4 border-b border-border-main/50 bg-bg-main/90 px-4 backdrop-blur-sm md:px-8">
+      <header className="z-20 flex min-h-[72px] shrink-0 items-center gap-2 border-b border-border-main/50 bg-bg-main/90 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-sm sm:gap-4 sm:px-4 md:px-8">
         <button type="button" onClick={onOpenSidebar} aria-label="Open sidebar" className="-ml-2 rounded-lg p-2 text-text-muted hover:bg-black/5 hover:text-text-main lg:hidden">
           <Menu className="h-6 w-6" />
         </button>
@@ -83,10 +84,11 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
           {conversationTitle && <span className="ml-2 hidden max-w-[260px] truncate text-sm text-text-muted md:inline">{conversationTitle}</span>}
         </div>
         <div className="flex items-center gap-2">
-          <div role="group" aria-label="Workspace mode" className="flex items-center rounded-full border border-border-main/60 bg-surface p-1 shadow-sm">
-            <ModeButton mode="chat" activeMode={mode} onSelect={onModeChange} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" />
+          <div role="group" aria-label="Workspace mode" className="flex shrink-0 items-center rounded-full border border-border-main/60 bg-surface p-1 shadow-sm">
+            <ModeButton mode="chat" activeMode={mode} onSelect={(nextMode) => { setIsAgentPanelOpen(false); onModeChange(nextMode); }} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" />
             <ModeButton mode="agent" activeMode={mode} onSelect={onModeChange} icon={<Bot className="h-3.5 w-3.5" />} label="Agent" />
           </div>
+          {mode === "agent" && <button type="button" aria-label="Open agent details" aria-expanded={isAgentPanelOpen} onClick={() => setIsAgentPanelOpen(true)} className="rounded-full border border-border-main/60 bg-surface p-2.5 text-text-muted shadow-sm hover:text-text-main xl:hidden"><PanelRightOpen className="h-4 w-4" /></button>}
           <button type="button" onClick={() => document.dispatchEvent(new CustomEvent("open-settings"))} aria-label="Open settings" className="rounded-full border border-border-main/60 bg-surface p-2.5 text-text-muted shadow-sm hover:text-text-main"><Settings className="h-4 w-4" /></button>
         </div>
       </header>
@@ -103,7 +105,7 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
           {mode === "agent" && <AgentBottomComposer onCreateTask={onCreateAgentTask} activeTask={Boolean(activeAgentTask)} />}
           {mode === "chat" && <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={modelName} />}
         </main>
-        {mode === "agent" && <AgentSidePanel activeTask={activeAgentTask} execution={agentExecution} events={executionEvents} onRollback={onRollbackAgentTask} />}
+        {mode === "agent" && <AgentSidePanel activeTask={activeAgentTask} execution={agentExecution} events={executionEvents} onRollback={onRollbackAgentTask} mobileOpen={isAgentPanelOpen} onClose={() => setIsAgentPanelOpen(false)} />}
       </div>
     </div>
   );

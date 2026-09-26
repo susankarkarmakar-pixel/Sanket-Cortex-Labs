@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Archive, ArrowRight, BookOpen, Check, CheckCircle2, CircleHelp, Database, FileText, FolderKanban, Loader2, Plug, Plus, Search, Sparkles, Trash2, Upload, Workflow, Wrench, XCircle } from "lucide-react";
+import { Activity, Archive, ArrowRight, BookOpen, Check, CheckCircle2, CircleHelp, Database, FileText, FolderKanban, Loader2, Menu, Plug, Plus, Search, Sparkles, Trash2, Upload, Workflow, Wrench, XCircle } from "lucide-react";
 import { createDefaultToolRegistry } from "@/lib/agent/tools";
 import { getKeys } from "@/lib/key-storage";
 import { MODELS_METADATA, PROVIDERS } from "@/lib/ai-providers";
@@ -19,6 +19,7 @@ interface WorkspaceHubProps {
   onOpenChat: (prompt: string) => void;
   onOpenSettings: () => void;
   onOpenSection: (section: WorkspaceSection) => void;
+  onOpenSidebar: () => void;
 }
 
 const WORKFLOWS = [
@@ -26,7 +27,7 @@ const WORKFLOWS = [
   { id: "file-analysis", name: "Analyze a document", description: "Inspect a supported file, preview its contents, and summarize its structure.", goal: "Analyze the attached file and summarize its key findings, structure, and any data-quality issues.", icon: FileText, tag: "File analysis tool" },
 ];
 
-export function WorkspaceHub({ section, onStartAgent, onOpenChat, onOpenSettings, onOpenSection }: WorkspaceHubProps) {
+export function WorkspaceHub({ section, onStartAgent, onOpenChat, onOpenSettings, onOpenSection, onOpenSidebar }: WorkspaceHubProps) {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const refresh = useCallback(() => setRefreshVersion((version) => version + 1), []);
   useEffect(() => {
@@ -35,15 +36,15 @@ export function WorkspaceHub({ section, onStartAgent, onOpenChat, onOpenSettings
   }, [refresh]);
 
   switch (section) {
-    case "projects": return <ProjectsWorkspace refreshVersion={refreshVersion} onOpenChat={onOpenChat} />;
-    case "workflows": return <WorkflowsWorkspace onStartAgent={onStartAgent} onOpenSection={onOpenSection} />;
-    case "knowledge": return <KnowledgeWorkspace refreshVersion={refreshVersion} />;
-    case "plugins": return <PluginsWorkspace onOpenSettings={onOpenSettings} onStartAgent={onStartAgent} onOpenSection={onOpenSection} />;
-    case "documents": return <DocumentsWorkspace onStartAgent={onStartAgent} />;
+    case "projects": return <ProjectsWorkspace refreshVersion={refreshVersion} onOpenChat={onOpenChat} onOpenSidebar={onOpenSidebar} />;
+    case "workflows": return <WorkflowsWorkspace onStartAgent={onStartAgent} onOpenSection={onOpenSection} onOpenSidebar={onOpenSidebar} />;
+    case "knowledge": return <KnowledgeWorkspace refreshVersion={refreshVersion} onOpenSidebar={onOpenSidebar} />;
+    case "plugins": return <PluginsWorkspace onOpenSettings={onOpenSettings} onStartAgent={onStartAgent} onOpenSection={onOpenSection} onOpenSidebar={onOpenSidebar} />;
+    case "documents": return <DocumentsWorkspace onStartAgent={onStartAgent} onOpenSidebar={onOpenSidebar} />;
   }
 }
 
-function ProjectsWorkspace({ refreshVersion, onOpenChat }: { refreshVersion: number; onOpenChat: (prompt: string) => void }) {
+function ProjectsWorkspace({ refreshVersion, onOpenChat, onOpenSidebar }: { refreshVersion: number; onOpenChat: (prompt: string) => void; onOpenSidebar: () => void }) {
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -56,7 +57,7 @@ function ProjectsWorkspace({ refreshVersion, onOpenChat }: { refreshVersion: num
     try { saveProject({ name, description }); setName(""); setDescription(""); setError(null); }
     catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save that project."); }
   };
-  return <WorkspaceFrame icon={FolderKanban} eyebrow="Workspace" title="Projects" description="Keep related work organized in this browser. Your projects are private to this device." action={<span className="rounded-full bg-cream-highlight px-3 py-1 text-xs font-semibold text-accent">{projects.length} saved</span>}>
+  return <WorkspaceFrame onOpenSidebar={onOpenSidebar} icon={FolderKanban} eyebrow="Workspace" title="Projects" description="Keep related work organized in this browser. Your projects are private to this device." action={<span className="rounded-full bg-cream-highlight px-3 py-1 text-xs font-semibold text-accent">{projects.length} saved</span>}>
     <form onSubmit={create} className="mb-6 rounded-2xl border border-border-main/70 bg-surface p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-text-main"><Plus className="h-4 w-4 text-accent" />Create a project</div>
       <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_auto]"><input value={name} onChange={(event) => setName(event.target.value)} maxLength={100} placeholder="Project name" aria-label="Project name" className={inputClass} /><input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} placeholder="What are you working on? (optional)" aria-label="Project description" className={inputClass} /><button type="submit" disabled={!name.trim()} className={primaryButton}><Plus className="h-4 w-4" />Add project</button></div>
@@ -72,11 +73,11 @@ function ProjectCard({ project, onOpenChat }: { project: WorkspaceProject; onOpe
   return <article className="rounded-2xl border border-border-main/70 bg-surface p-4 shadow-sm"><div className="flex items-start gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream-highlight text-accent"><FolderKanban className="h-5 w-5" /></span><div className="min-w-0 flex-1"><h2 className="truncate font-semibold text-text-main">{project.name}</h2><p className="mt-1 line-clamp-2 min-h-10 text-sm leading-5 text-text-muted">{project.description || "No project description yet."}</p></div><button type="button" onClick={() => setProjectStatus(project.id, complete ? "active" : "complete")} title={complete ? "Reopen project" : "Mark project complete"} aria-label={complete ? `Reopen ${project.name}` : `Complete ${project.name}`} className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${complete ? "bg-emerald-50 text-emerald-800" : "bg-blue-50 text-blue-800"}`}>{complete ? "Complete" : "Active"}</button></div><div className="mt-4 flex items-center justify-between border-t border-border-main/50 pt-3"><button type="button" onClick={() => onOpenChat(`Help me make progress on the project “${project.name}”. ${project.description}`.trim())} className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline"><Sparkles className="h-3.5 w-3.5" />Discuss with AI</button><button type="button" onClick={() => deleteProject(project.id)} aria-label={`Delete ${project.name}`} title="Delete project" className="rounded-lg p-2 text-text-muted hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4" /></button></div></article>;
 }
 
-function WorkflowsWorkspace({ onStartAgent, onOpenSection }: { onStartAgent: (goal: string) => void; onOpenSection: (section: WorkspaceSection) => void }) {
-  return <WorkspaceFrame icon={Workflow} eyebrow="Repeatable tasks" title="Workflows" description="Start a guided task using the tools that are actually available in Susan AI."><div className="grid gap-4 lg:grid-cols-2">{WORKFLOWS.map((workflow) => { const Icon = workflow.icon; return <article key={workflow.id} className="rounded-2xl border border-border-main/70 bg-surface p-5 shadow-sm"><div className="flex items-start gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-cream-highlight text-accent"><Icon className="h-5 w-5" /></span><div><h2 className="font-semibold text-text-main">{workflow.name}</h2><p className="mt-1 text-sm leading-6 text-text-muted">{workflow.description}</p></div></div><div className="mt-4 flex items-center justify-between border-t border-border-main/50 pt-3"><span className="rounded-full bg-bg-main px-2.5 py-1 text-[10px] font-medium text-text-muted">{workflow.tag}</span><button type="button" onClick={() => workflow.id === "file-analysis" ? onOpenSection("documents") : onStartAgent(workflow.goal)} className={secondaryButton}>{workflow.id === "file-analysis" ? "Choose a document" : "Start workflow"}<ArrowRight className="h-3.5 w-3.5" /></button></div></article>; })}</div><div className="mt-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><CircleHelp className="mt-0.5 h-4 w-4 shrink-0" /><p>Workflows are saved as guided task plans; file-analysis tasks use a document you choose from the Documents workspace. No workflow runs external actions without your input.</p></div></WorkspaceFrame>;
+function WorkflowsWorkspace({ onStartAgent, onOpenSection, onOpenSidebar }: { onStartAgent: (goal: string) => void; onOpenSection: (section: WorkspaceSection) => void; onOpenSidebar: () => void }) {
+  return <WorkspaceFrame onOpenSidebar={onOpenSidebar} icon={Workflow} eyebrow="Repeatable tasks" title="Workflows" description="Start a guided task using the tools that are actually available in Susan AI."><div className="grid gap-4 lg:grid-cols-2">{WORKFLOWS.map((workflow) => { const Icon = workflow.icon; return <article key={workflow.id} className="rounded-2xl border border-border-main/70 bg-surface p-5 shadow-sm"><div className="flex items-start gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-cream-highlight text-accent"><Icon className="h-5 w-5" /></span><div><h2 className="font-semibold text-text-main">{workflow.name}</h2><p className="mt-1 text-sm leading-6 text-text-muted">{workflow.description}</p></div></div><div className="mt-4 flex items-center justify-between border-t border-border-main/50 pt-3"><span className="rounded-full bg-bg-main px-2.5 py-1 text-[10px] font-medium text-text-muted">{workflow.tag}</span><button type="button" onClick={() => workflow.id === "file-analysis" ? onOpenSection("documents") : onStartAgent(workflow.goal)} className={secondaryButton}>{workflow.id === "file-analysis" ? "Choose a document" : "Start workflow"}<ArrowRight className="h-3.5 w-3.5" /></button></div></article>; })}</div><div className="mt-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><CircleHelp className="mt-0.5 h-4 w-4 shrink-0" /><p>Workflows are saved as guided task plans; file-analysis tasks use a document you choose from the Documents workspace. No workflow runs external actions without your input.</p></div></WorkspaceFrame>;
 }
 
-function KnowledgeWorkspace({ refreshVersion }: { refreshVersion: number }) {
+function KnowledgeWorkspace({ refreshVersion, onOpenSidebar }: { refreshVersion: number; onOpenSidebar: () => void }) {
   const [notes, setNotes] = useState<KnowledgeNote[]>([]);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [title, setTitle] = useState("");
@@ -93,14 +94,14 @@ function KnowledgeWorkspace({ refreshVersion }: { refreshVersion: number }) {
     catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save this note."); }
   };
   const edit = (note: KnowledgeNote) => { setEditingId(note.id); setTitle(note.title); setContent(note.content); setTags(note.tags.join(", ")); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  return <WorkspaceFrame icon={BookOpen} eyebrow="Private notes" title="Knowledge Base" description="Save searchable notes and reference material locally on this device.">
+  return <WorkspaceFrame onOpenSidebar={onOpenSidebar} icon={BookOpen} eyebrow="Private notes" title="Knowledge Base" description="Save searchable notes and reference material locally on this device.">
     <form onSubmit={save} className="mb-6 rounded-2xl border border-border-main/70 bg-surface p-4 shadow-sm"><div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-semibold text-text-main"><Database className="h-4 w-4 text-accent" />{editingId ? "Edit note" : "Add a knowledge note"}</div>{editingId && <button type="button" onClick={reset} className="text-xs font-medium text-text-muted hover:text-text-main">Cancel edit</button>}</div><input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="Note title" aria-label="Note title" className={`${inputClass} mb-3`} /><textarea value={content} onChange={(event) => setContent(event.target.value)} maxLength={20_000} rows={4} placeholder="Write down useful facts, project context, or ideas…" aria-label="Note content" className={`${inputClass} resize-y`} /><div className="mt-3 flex flex-col gap-3 sm:flex-row"><input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="Tags, separated by commas" aria-label="Note tags" className={`${inputClass} flex-1`} /><button type="submit" disabled={!title.trim() || !content.trim()} className={primaryButton}>{editingId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{editingId ? "Save changes" : "Save note"}</button></div>{error && <p role="alert" className="mt-2 text-xs text-red-700">{error}</p>}</form>
     <div className="mb-4 flex items-center gap-2"><Search className="h-4 w-4 text-text-muted" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, notes, and tags" aria-label="Search knowledge notes" className="w-full max-w-md rounded-lg border border-border-main/70 bg-surface px-3 py-2 text-sm outline-none focus:border-accent/50" /></div>
     {visible.length ? <div className="space-y-3">{visible.map((note) => <article key={note.id} className="rounded-2xl border border-border-main/70 bg-surface p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold text-text-main">{note.title}</h2><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-text-muted">{note.content}</p>{note.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{note.tags.map((tag) => <span key={tag} className="rounded-full bg-cream-highlight px-2 py-0.5 text-[10px] font-medium text-accent">{tag}</span>)}</div>}</div><div className="flex shrink-0 gap-1"><button type="button" onClick={() => edit(note)} title="Edit note" aria-label={`Edit ${note.title}`} className="rounded-lg p-2 text-text-muted hover:bg-cream-highlight hover:text-accent"><FileText className="h-4 w-4" /></button><button type="button" onClick={() => deleteKnowledgeNote(note.id)} title="Delete note" aria-label={`Delete ${note.title}`} className="rounded-lg p-2 text-text-muted hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4" /></button></div></div></article>)}</div> : <EmptyState icon={BookOpen} title={query ? "No matching notes" : "Nothing saved yet"} body={query ? "Try another search term." : "Add your first private note above. Notes never leave this browser."} />}
   </WorkspaceFrame>;
 }
 
-function PluginsWorkspace({ onOpenSettings, onStartAgent, onOpenSection }: { onOpenSettings: () => void; onStartAgent: (goal: string) => void; onOpenSection: (section: WorkspaceSection) => void }) {
+function PluginsWorkspace({ onOpenSettings, onStartAgent, onOpenSection, onOpenSidebar }: { onOpenSettings: () => void; onStartAgent: (goal: string) => void; onOpenSection: (section: WorkspaceSection) => void; onOpenSidebar: () => void }) {
   const [keys, setKeys] = useState<Record<string, string | undefined>>({});
   const [customProviders, setCustomProviders] = useState<ReturnType<typeof getCustomProviders>>([]);
   const [toolStates, setToolStates] = useState<Record<string, boolean>>({});
@@ -164,7 +165,7 @@ function PluginsWorkspace({ onOpenSettings, onStartAgent, onOpenSection }: { onO
     { id: "manus", label: MODELS_METADATA.manus.name, description: "Asynchronous tasks; connection testing is not supported here.", async: false, model: MODELS_METADATA.manus.model, unsupported: true },
   ];
 
-  return <WorkspaceFrame icon={Plug} eyebrow="Connections & tools" title="Plugins" description="Manage AI provider connections and the local tools Agent Mode may use. Third-party plugin installation is not enabled in this version.">
+  return <WorkspaceFrame onOpenSidebar={onOpenSidebar} icon={Plug} eyebrow="Connections & tools" title="Plugins" description="Manage AI provider connections and the local tools Agent Mode may use. Third-party plugin installation is not enabled in this version.">
     <section className="mb-7">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-semibold text-text-main">AI providers</h2><p className="mt-1 text-xs leading-5 text-text-muted">Saved-key status is separate from a verified connection. Testing sends a tiny request that may use provider quota or incur a small charge.</p></div><button type="button" onClick={onOpenSettings} className={secondaryButton}><Plug className="h-3.5 w-3.5" />Manage keys</button></div>
       <div className="grid gap-3 lg:grid-cols-2">{providers.map((provider) => <ProviderCard key={provider.id} provider={provider} keySaved={Boolean(keys[provider.id]?.trim())} test={testStates[provider.id]} testing={testingIds.includes(provider.id)} onTest={() => void testProvider(provider.id, provider.label, provider.async, "customProvider" in provider ? provider.customProvider : undefined)} onManage={onOpenSettings} />)}</div>
@@ -191,7 +192,7 @@ function ActivityPanel({ activities, onClear }: { activities: PluginActivity[]; 
 }
 
 
-function DocumentsWorkspace({ onStartAgent }: { onStartAgent: (goal: string, attachments?: AgentAttachment[]) => void }) {
+function DocumentsWorkspace({ onStartAgent, onOpenSidebar }: { onStartAgent: (goal: string, attachments?: AgentAttachment[]) => void; onOpenSidebar: () => void }) {
   const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -232,7 +233,7 @@ function DocumentsWorkspace({ onStartAgent }: { onStartAgent: (goal: string, att
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not prepare the document for analysis."); }
   };
   const remove = async (document: WorkspaceDocument) => { try { await deleteWorkspaceDocument(document.id); await load(); } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not delete this document."); } };
-  return <WorkspaceFrame icon={Archive} eyebrow="Local files" title="Documents" description="Upload a supported file to keep it in this browser, download it later, or send it to the Agent for analysis." action={<button type="button" onClick={() => fileInputRef.current?.click()} disabled={busy} className={primaryButton}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}Upload files</button>}>
+  return <WorkspaceFrame onOpenSidebar={onOpenSidebar} icon={Archive} eyebrow="Local files" title="Documents" description="Upload a supported file to keep it in this browser, download it later, or send it to the Agent for analysis." action={<button type="button" onClick={() => fileInputRef.current?.click()} disabled={busy} className={primaryButton}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}Upload files</button>}>
     <input ref={fileInputRef} type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx" className="sr-only" onChange={(event) => void upload(event.target.files)} />
     <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border-main/60 bg-bg-main px-4 py-3 text-xs text-text-muted"><span>TXT · MD · CSV · JSON · PDF · DOCX · XLSX · up to 4 MB per file</span><span className="shrink-0">{documents.length} saved</span></div>
     <div className="mb-4 flex items-center gap-2"><Search className="h-4 w-4 text-text-muted" /><input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search documents" aria-label="Search documents" className="w-full max-w-md rounded-lg border border-border-main/70 bg-surface px-3 py-2 text-sm outline-none focus:border-accent/50" /></div>
@@ -241,8 +242,8 @@ function DocumentsWorkspace({ onStartAgent }: { onStartAgent: (goal: string, att
   </WorkspaceFrame>;
 }
 
-function WorkspaceFrame({ icon: Icon, eyebrow, title, description, action, children }: { icon: typeof FolderKanban; eyebrow: string; title: string; description: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-bg-main"><header className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-border-main/50 bg-bg-main/95 px-5 py-4 backdrop-blur-sm md:px-8"><div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cream-highlight text-accent"><Icon className="h-5 w-5" /></span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">{eyebrow}</p><h1 className="truncate text-lg font-semibold text-text-main">{title}</h1></div></div>{action}</header><main className="mx-auto w-full max-w-5xl flex-1 px-5 py-6 md:px-8 md:py-8"><p className="mb-6 max-w-3xl text-sm leading-6 text-text-muted">{description}</p>{children}</main><footer className="border-t border-border-main/50 px-5 py-3 text-center text-[10px] text-text-muted md:px-8">Saved on this device · Susan AI</footer></div>;
+function WorkspaceFrame({ icon: Icon, eyebrow, title, description, action, children, onOpenSidebar }: { icon: typeof FolderKanban; eyebrow: string; title: string; description: string; action?: React.ReactNode; children: React.ReactNode; onOpenSidebar: () => void }) {
+  return <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-bg-main"><header className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-2 border-b border-border-main/50 bg-bg-main/95 px-3 py-3 backdrop-blur-sm sm:gap-4 sm:px-5 md:px-8" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}><button type="button" onClick={onOpenSidebar} aria-label="Open sidebar" className="-ml-1 shrink-0 rounded-lg p-2 text-text-muted hover:bg-black/5 hover:text-text-main lg:hidden"><Menu className="h-5 w-5" /></button><div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cream-highlight text-accent"><Icon className="h-5 w-5" /></span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">{eyebrow}</p><h1 className="truncate text-lg font-semibold text-text-main">{title}</h1></div></div>{action}</header><main className="mx-auto w-full max-w-5xl flex-1 px-5 py-6 md:px-8 md:py-8"><p className="mb-6 max-w-3xl text-sm leading-6 text-text-muted">{description}</p>{children}</main><footer className="border-t border-border-main/50 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-[10px] text-text-muted md:px-8">Saved on this device · Susan AI</footer></div>;
 }
 
 function EmptyState({ icon: Icon, title, body }: { icon: typeof FolderKanban; title: string; body: string }) {

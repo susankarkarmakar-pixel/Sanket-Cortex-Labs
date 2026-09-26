@@ -46,6 +46,31 @@ test("health endpoint responds successfully", async () => {
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
 
+test("PWA manifest is installable and all launcher icons are served", async () => {
+  const response = await fetch(`${baseUrl}/manifest.webmanifest`);
+  assert.equal(response.status, 200);
+  const manifest = await response.json();
+  assert.equal(manifest.name, "Susan AI — Sanket Pixel Technologies");
+  assert.equal(manifest.start_url, "/");
+  assert.equal(manifest.scope, "/");
+  assert.equal(manifest.display, "standalone");
+  assert.ok(manifest.icons.some((icon) => icon.sizes === "192x192"));
+  assert.ok(manifest.icons.some((icon) => icon.sizes === "512x512"));
+  assert.ok(manifest.icons.some((icon) => icon.purpose === "maskable"));
+
+  for (const path of ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png", "/icons/apple-touch-icon.png"]) {
+    const icon = await fetch(`${baseUrl}${path}`);
+    assert.equal(icon.status, 200, `${path} must be available to the browser installer`);
+    assert.match(icon.headers.get("content-type") || "", /image\/png/);
+  }
+
+  const page = await fetch(`${baseUrl}/`);
+  const html = await page.text();
+  assert.match(html, /rel="manifest"/);
+  assert.match(html, /<meta name="apple-mobile-web-app-capable" content="yes"/);
+  assert.match(html, /viewport-fit=cover/);
+});
+
 test("chat route rejects non-JSON requests", async () => {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: "POST",
