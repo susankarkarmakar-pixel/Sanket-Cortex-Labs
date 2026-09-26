@@ -66,8 +66,8 @@ function formatFileOutput(result: FileAnalysisOutput): string {
   if (result.ocrUsed) summary.push(`OCR: ${result.ocrPageCount || 0} page${result.ocrPageCount === 1 ? "" : "s"}`);
   if (typeof result.sheetCount === "number") summary.push(`Sheets: ${result.sheetCount}${result.sheetNames?.length ? ` (${result.sheetNames.join(", ")})` : ""}`);
   if (result.sheetTables?.length) summary.push(`Sheet previews: ${result.sheetTables.map((sheet) => `${sheet.name} (${sheet.table.rowCount} rows)`).join(", ")}`);
-  if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`);
-  if (result.table?.numericStats.length) summary.push(`Numeric columns: ${result.table.numericStats.map((stat) => `${stat.column} avg=${stat.average.toFixed(2)}`).join(", ")}`);
+  if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`, `Duplicate rows: ${result.table.duplicateRowCount}`, `Outlier rows: ${result.table.outlierCount}`);
+  if (result.table?.numericStats.length) summary.push(`Numeric columns: ${result.table.numericStats.map((stat) => `${stat.column} avg=${stat.average.toFixed(2)}, median=${stat.median.toFixed(2)}, sd=${stat.standardDeviation.toFixed(2)}`).join(", ")}`);
   if (typeof result.jsonValid === "boolean") summary.push(`JSON valid: ${result.jsonValid ? "yes" : "no"}`);
   if (result.note) summary.push(result.note);
   if (result.preview) summary.push(`Preview:\n${result.preview}`);

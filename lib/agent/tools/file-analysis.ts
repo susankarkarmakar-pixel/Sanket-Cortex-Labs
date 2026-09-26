@@ -5,9 +5,9 @@ import ExcelJS from "exceljs";
 import { createWorker } from "tesseract.js";
 
 interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: string; }
-export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
+export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; median: number; mode?: number; standardDeviation: number; percentile25: number; percentile75: number; }
 export interface ChartPoint { label: string; value: number; }
-export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
+export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; duplicateRowCount: number; outlierCount: number; uniqueValueCounts: Record<string, number>; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
 export interface SheetTableSummary { name: string; table: CsvTableSummary; preview: string; }
 export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; tableCount?: number; ocrUsed?: boolean; ocrPageCount?: number; sheetCount?: number; sheetNames?: string[]; sheetTables?: SheetTableSummary[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
@@ -176,18 +176,40 @@ function summarizeTable(inputRecords: string[][]): CsvTableSummary {
   const columns = (records.shift() || []).map((column, index) => column.trim() || `Column ${index + 1}`);
   const rows = records.slice(0, 8).map((record) => columns.map((_, index) => record[index]?.trim() || ""));
   const missingValueCount = records.reduce((count, record) => count + columns.filter((_, index) => !record[index]?.trim()).length, 0);
+  const uniqueValueCounts = Object.fromEntries(columns.map((column, columnIndex) => [column, new Set(records.map((record) => record[columnIndex]?.trim() || "")).size]));
+  const duplicateRowCount = records.length - new Set(records.map((record) => record.map((cell) => cell.trim()).join("\u001f"))).size;
   const numericStats = columns.flatMap((column, columnIndex) => {
     const values = records.map((record) => Number(record[columnIndex])).filter((value) => Number.isFinite(value));
     const nonEmptyCount = records.filter((record) => record[columnIndex]?.trim()).length;
     if (values.length === 0 || values.length < Math.max(1, Math.ceil(nonEmptyCount * 0.8))) return [];
     const total = values.reduce((sum, value) => sum + value, 0);
-    return [{ column, count: values.length, average: total / values.length, minimum: Math.min(...values), maximum: Math.max(...values) }];
+    const sorted = [...values].sort((left, right) => left - right);
+    const percentile25 = percentile(sorted, 0.25);
+    const percentile75 = percentile(sorted, 0.75);
+    const frequencies = new Map<number, number>();
+    values.forEach((value) => frequencies.set(value, (frequencies.get(value) || 0) + 1));
+    const modeEntry = [...frequencies.entries()].sort((left, right) => right[1] - left[1])[0];
+    const average = total / values.length;
+    const standardDeviation = Math.sqrt(values.reduce((sum, value) => sum + ((value - average) ** 2), 0) / values.length);
+    return [{ column, count: values.length, average, minimum: sorted[0], maximum: sorted[sorted.length - 1], median: percentile(sorted, 0.5), mode: modeEntry && modeEntry[1] > 1 ? modeEntry[0] : undefined, standardDeviation, percentile25, percentile75 }];
   });
+  const outlierCount = records.filter((record) => numericStats.some((stat) => {
+    const value = Number(record[columns.indexOf(stat.column)]);
+    return Number.isFinite(value) && (value < stat.percentile25 - 1.5 * (stat.percentile75 - stat.percentile25) || value > stat.percentile75 + 1.5 * (stat.percentile75 - stat.percentile25));
+  })).length;
   const chartColumn = numericStats[0]?.column;
   const chartColumnIndex = chartColumn ? columns.indexOf(chartColumn) : -1;
   const labelColumnIndex = columns.findIndex((_, index) => index !== chartColumnIndex);
   const chartData = chartColumn && chartColumnIndex >= 0 ? { column: chartColumn, points: records.slice(0, 12).flatMap((record, index) => { const value = Number(record[chartColumnIndex]); return Number.isFinite(value) ? [{ label: record[labelColumnIndex]?.trim() || `Row ${index + 1}`, value }] : []; }) } : undefined;
-  return { columns, rows, rowCount: records.length, missingValueCount, numericStats, chartData };
+  return { columns, rows, rowCount: records.length, missingValueCount, duplicateRowCount, outlierCount, uniqueValueCounts, numericStats, chartData };
+}
+
+function percentile(sorted: number[], fraction: number): number {
+  if (sorted.length === 0) return 0;
+  const position = (sorted.length - 1) * fraction;
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower);
 }
 
 function parseCsvRecords(text: string): string[][] {
