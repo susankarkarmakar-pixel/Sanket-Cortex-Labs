@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, Settings, Sparkles } from "lucide-react";
+import { Bot, Menu, MessageSquare, Settings, Sparkles } from "lucide-react";
 import { ModelOption } from "@/components/sidebar/model-selector";
+import { AgentMode } from "@/lib/agent/mode";
+import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
+import { AgentExecutionOutcome } from "@/lib/agent/executor";
+import { AgentTaskComposer } from "@/components/agent/agent-task-composer";
+import { AgentSidePanel } from "@/components/agent/agent-side-panel";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
 import { getApiKey } from "@/lib/key-storage";
@@ -10,6 +15,14 @@ import { MODELS_METADATA } from "@/lib/ai-providers";
 import { getCustomProviders } from "@/lib/custom-providers";
 
 interface ChatAreaProps {
+  mode: AgentMode;
+  onModeChange: (mode: AgentMode) => void;
+  activeAgentTask: AgentTask | null;
+  agentExecution: Pick<AgentExecutionOutcome, "message" | "output" | "ok"> | null;
+  executionEvents: ExecutionEvent[];
+  onCreateAgentTask: (goal: string, attachments: AgentAttachment[]) => void | Promise<void>;
+  onRunAgentTask: () => void | Promise<void>;
+  onClearAgentTask: () => void;
   onOpenSidebar: () => void;
   selectedModel: ModelOption;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +38,7 @@ interface ChatAreaProps {
   onPrompt: (prompt: string) => void;
 }
 
-export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
+export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
   const customProvider = getCustomProviders().find((provider) => provider.id === selectedModel);
   const modelMetadata = MODELS_METADATA[selectedModel as keyof typeof MODELS_METADATA];
@@ -58,6 +71,10 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
           {conversationTitle && <span className="ml-2 hidden max-w-[260px] truncate text-sm text-text-muted md:inline">{conversationTitle}</span>}
         </div>
         <div className="flex items-center gap-2">
+          <div role="group" aria-label="Workspace mode" className="flex items-center rounded-full border border-border-main/60 bg-surface p-1 shadow-sm">
+            <ModeButton mode="chat" activeMode={mode} onSelect={onModeChange} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" />
+            <ModeButton mode="agent" activeMode={mode} onSelect={onModeChange} icon={<Bot className="h-3.5 w-3.5" />} label="Agent" />
+          </div>
           <div className="flex items-center gap-2 rounded-full border border-border-main/60 bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm">
             <span>{modelMetadata?.icon || "✦"}</span><span className="hidden sm:inline">{modelName}</span>
           </div>
@@ -65,12 +82,26 @@ export function ChatArea({ onOpenSidebar, selectedModel, messages, input, onInpu
         </div>
       </header>
 
-      {toastError && <div role="alert" className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">{toastError}</div>}
-      {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
-
-      <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} />
-      <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={modelName} />
+      <div className="flex min-h-0 flex-1">
+        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+          {toastError && <div role="alert" className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">{toastError}</div>}
+          {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
+          {mode === "agent" && <AgentTaskComposer activeTask={activeAgentTask} execution={agentExecution} onCreateTask={onCreateAgentTask} onRunTask={onRunAgentTask} onClearTask={onClearAgentTask} />}
+          <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} />
+          {mode === "chat" && <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={modelName} />}
+        </main>
+        {mode === "agent" && <AgentSidePanel activeTask={activeAgentTask} execution={agentExecution} events={executionEvents} />}
+      </div>
     </div>
+  );
+}
+
+function ModeButton({ mode, activeMode, onSelect, icon, label }: { mode: AgentMode; activeMode: AgentMode; onSelect: (mode: AgentMode) => void; icon: React.ReactNode; label: string }) {
+  const active = mode === activeMode;
+  return (
+    <button type="button" aria-pressed={active} onClick={() => onSelect(mode)} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-colors ${active ? "bg-cream-highlight text-accent" : "text-text-muted hover:bg-black/5 hover:text-text-main"}`}>
+      {icon}<span className="hidden sm:inline">{label}</span>
+    </button>
   );
 }
 

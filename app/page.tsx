@@ -15,6 +15,11 @@ import { getAppSettings } from "@/lib/app-settings";
 import { fileToUIPart } from "@/lib/file-attachments";
 import { Message } from "@/components/chat/chat-messages";
 import { getCustomProviders } from "@/lib/custom-providers";
+import { useAgentMode } from "@/hooks/use-agent-mode";
+import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
+import { createAgentTask } from "@/lib/agent/agent-state";
+import { planAgentTask } from "@/lib/agent/planner";
+import { executeFirstToolStep } from "@/lib/agent/executor";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -24,6 +29,10 @@ export default function Home() {
   const [input, setInput] = useState("");
   const { keys, keyVersion } = useApiKeys();
   const { settings } = useAppSettings();
+  const { mode, setMode } = useAgentMode();
+  const [activeAgentTask, setActiveAgentTask] = useState<AgentTask | null>(null);
+  const [agentExecution, setAgentExecution] = useState<{ message: string; output?: string; ok: boolean } | null>(null);
+  const [executionEvents, setExecutionEvents] = useState<ExecutionEvent[]>([]);
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/chat",
@@ -81,11 +90,35 @@ export default function Home() {
     setInput("");
     await sendMessage({ text, files: fileParts });
   };
+  const handleCreateAgentTask = (goal: string, attachments: AgentAttachment[]) => {
+    const task = planAgentTask(createAgentTask(goal, undefined, undefined, attachments));
+    setActiveAgentTask(task);
+    setAgentExecution(null);
+    setExecutionEvents([
+      createExecutionEvent(task.id, "task-created", "Task created"),
+      createExecutionEvent(task.id, "plan-created", `Plan created with ${task.steps.length} steps`),
+    ]);
+  };
+  const handleRunAgentTask = async () => {
+    if (!activeAgentTask) return;
+    const step = activeAgentTask.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
+    if (!step?.toolId) return;
+    setExecutionEvents((events) => [...events, createExecutionEvent(activeAgentTask.id, "tool-started", `Started ${step.title}`, step.id, step.toolId)]);
+    const outcome = await executeFirstToolStep(activeAgentTask);
+    setActiveAgentTask(outcome.task);
+    setAgentExecution({ message: outcome.message, output: outcome.output, ok: outcome.ok });
+    setExecutionEvents((events) => {
+      const nextEvents = [...events, createExecutionEvent(activeAgentTask.id, outcome.ok ? "tool-completed" : "tool-failed", outcome.message, step.id, step.toolId)];
+      if (outcome.ok && outcome.task.status === "completed") nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-completed", "Task completed"));
+      if (!outcome.ok) nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-failed", "Task failed"));
+      return nextEvents;
+    });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
-      <ChatArea onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
+      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onClearAgentTask={() => { setActiveAgentTask(null); setAgentExecution(null); setExecutionEvents([]); }} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
@@ -96,4 +129,8 @@ function getMessageText(message: { parts?: Array<{ type?: string; text?: string;
   const text = message.parts?.filter((part) => part.type === "text").map((part) => part.text || "").join("\n") || (typeof message.content === "string" ? message.content : "");
   const files = message.parts?.filter((part) => part.type === "file").map((part) => part.filename || "Attached file") || [];
   return files.length > 0 ? `${text}${text ? "\n\n" : ""}Attachments: ${files.join(", ")}` : text;
+}
+
+function createExecutionEvent(taskId: string, type: ExecutionEvent["type"], message: string, stepId?: string, toolId?: string): ExecutionEvent {
+  return { id: crypto.randomUUID(), taskId, type, message, stepId, toolId, timestamp: new Date().toISOString() };
 }
