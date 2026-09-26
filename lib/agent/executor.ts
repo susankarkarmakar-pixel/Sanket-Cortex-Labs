@@ -1,14 +1,14 @@
 import { calculatorTool } from "@/lib/agent/tools/calculator";
 import { fileAnalysisTool } from "@/lib/agent/tools/file-analysis";
 import { CsvTableSummary, FileAnalysisOutput } from "@/lib/agent/tools/file-analysis";
-import { AgentTask, ToolExecutionContext } from "@/lib/agent/types";
+import { AgentError, AgentTask, ToolExecutionContext } from "@/lib/agent/types";
 import { transitionTask, updateStepStatus } from "@/lib/agent/agent-state";
 
-export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; table?: CsvTableSummary; ok: boolean; }
+export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; table?: CsvTableSummary; error?: AgentError; ok: boolean; }
 
 export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecutionOutcome> {
   const step = task.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
-  if (!step || !step.toolId) return { task, ok: false, message: "No executable tool step is available yet. The remaining steps need the next orchestration phase." };
+  if (!step || !step.toolId) return failure(task, "NO_EXECUTABLE_STEP", "No executable tool step is available yet. The remaining steps need the next orchestration phase.", false, "Create a new task or wait for the next orchestration phase.");
 
   const context: ToolExecutionContext = { taskId: task.id, stepId: step.id, signal: new AbortController().signal, requestApproval: async () => false };
   let runningTask = transitionTask(task, "running");
@@ -18,11 +18,11 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
     const attachment = task.attachments[0];
     if (!attachment) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
-      return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: "File Analysis needs an attached TXT, Markdown, CSV, JSON, PDF, DOCX, or XLSX file." };
+      return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "MISSING_ATTACHMENT", "File Analysis needs an attached TXT, Markdown, CSV, JSON, PDF, DOCX, or XLSX file.", true, "Attach a supported file and retry the failed step.");
     }
     if (!attachment.dataUrl) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
-      return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: `${attachment.filename} was restored as metadata only. Re-attach the file before running File Analysis.` };
+      return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "RESTORED_ATTACHMENT", `${attachment.filename} was restored as metadata only. Re-attach the file before running File Analysis.`, true, "Re-attach the file, create a fresh task, and retry analysis.");
     }
     try {
       const result = await fileAnalysisTool.execute({ filename: attachment.filename, mediaType: attachment.mediaType, dataUrl: attachment.dataUrl }, context);
@@ -30,13 +30,13 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
       return { task: finalizeAfterTool(completedTask), ok: true, message: "File Analysis completed successfully.", output: formatFileOutput(result), table: result.table };
     } catch (error) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
-      return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: error instanceof Error ? error.message : "File Analysis could not complete." };
+      return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "FILE_ANALYSIS_FAILED", error instanceof Error ? error.message : "File Analysis could not complete.", true, "Check the file format and size, then retry the failed step.");
     }
   }
 
   if (step.toolId !== "calculator") {
     const failedTask = updateStepStatus(runningTask, step.id, "failed");
-    return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: `The tool '${step.toolId}' is not executable in this MVP.` };
+    return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "TOOL_NOT_EXECUTABLE", `The tool '${step.toolId}' is not executable in this MVP.`, false, "Choose a task that uses a registered tool.");
   }
 
   try {
@@ -45,8 +45,12 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
     return { task: finalizeAfterTool(completedTask), ok: true, message: "Calculator completed successfully.", output: `${result.expression} = ${result.value}` };
   } catch (error) {
     const failedTask = updateStepStatus(runningTask, step.id, "failed");
-    return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: error instanceof Error ? error.message : "Calculator could not complete the expression." };
+    return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "CALCULATION_FAILED", error instanceof Error ? error.message : "Calculator could not complete the expression.", true, "Check the arithmetic expression and retry the failed step.");
   }
+}
+
+function failure(task: AgentTask, code: AgentError["code"], message: string, retryable: boolean, recoveryHint: string): AgentExecutionOutcome {
+  return { task, ok: false, message, error: { code, message, retryable, recoveryHint } };
 }
 
 function finalizeAfterTool(task: AgentTask): AgentTask {

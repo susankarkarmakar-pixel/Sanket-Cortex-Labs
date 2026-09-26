@@ -32,8 +32,9 @@ export default function Home() {
   const { settings } = useAppSettings();
   const { mode, setMode } = useAgentMode();
   const [activeAgentTask, setActiveAgentTask] = useState<AgentTask | null>(null);
-  const [agentExecution, setAgentExecution] = useState<Pick<AgentExecutionOutcome, "message" | "output" | "table" | "ok"> | null>(null);
+  const [agentExecution, setAgentExecution] = useState<Pick<AgentExecutionOutcome, "message" | "output" | "table" | "error" | "ok"> | null>(null);
   const [executionEvents, setExecutionEvents] = useState<ExecutionEvent[]>([]);
+  const safeTaskSnapshot = useRef<AgentTask | null>(null);
   const { records, ready: tasksReady, save: saveAgentTask, remove: removeAgentTask } = useAgentTasks();
   const restoredTask = useRef(false);
 
@@ -96,6 +97,7 @@ export default function Home() {
   const handleCreateAgentTask = (goal: string, attachments: AgentAttachment[]) => {
     const task = planAgentTask(createAgentTask(goal, undefined, undefined, attachments));
     setActiveAgentTask(task);
+    safeTaskSnapshot.current = null;
     setAgentExecution(null);
     setExecutionEvents([
       createExecutionEvent(task.id, "task-created", "Task created"),
@@ -106,16 +108,25 @@ export default function Home() {
     if (!activeAgentTask) return;
     const step = activeAgentTask.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
     if (!step?.toolId) return;
+    if (!safeTaskSnapshot.current || safeTaskSnapshot.current.id !== activeAgentTask.id) safeTaskSnapshot.current = structuredClone(activeAgentTask);
     setExecutionEvents((events) => [...events, createExecutionEvent(activeAgentTask.id, "tool-started", `Started ${step.title}`, step.id, step.toolId)]);
     const outcome = await executeFirstToolStep(activeAgentTask);
     setActiveAgentTask(outcome.task);
-    setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, ok: outcome.ok });
+    setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, error: outcome.error, ok: outcome.ok });
+    if (outcome.ok) safeTaskSnapshot.current = structuredClone(outcome.task);
     setExecutionEvents((events) => {
       const nextEvents = [...events, createExecutionEvent(activeAgentTask.id, outcome.ok ? "tool-completed" : "tool-failed", outcome.message, step.id, step.toolId)];
       if (outcome.ok && outcome.task.status === "completed") nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-completed", "Task completed"));
       if (!outcome.ok) nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-failed", "Task failed"));
       return nextEvents;
     });
+  };
+  const handleRollbackAgentTask = () => {
+    if (!activeAgentTask || activeAgentTask.status !== "failed" || !safeTaskSnapshot.current) return;
+    const restoredTask = { ...structuredClone(safeTaskSnapshot.current), updatedAt: new Date().toISOString() };
+    setActiveAgentTask(restoredTask);
+    setAgentExecution({ message: "Task rolled back to the last safe snapshot.", ok: true });
+    setExecutionEvents((events) => [...events, createExecutionEvent(restoredTask.id, "task-rolled-back", "Task rolled back to the last safe snapshot")]);
   };
   const handlePauseAgentTask = () => {
     if (!activeAgentTask || activeAgentTask.status !== "running") return;
@@ -174,7 +185,7 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
-      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
+      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onRollbackAgentTask={handleRollbackAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>

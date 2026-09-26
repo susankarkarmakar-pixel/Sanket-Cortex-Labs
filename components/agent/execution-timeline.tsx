@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CircleDot, ClipboardList, Clock3, Loader2, PauseCircle, PlayCircle, RotateCcw, XCircle, Zap } from "lucide-react";
+import { CheckCircle2, CircleDot, ClipboardList, Clock3, Loader2, PauseCircle, PlayCircle, RotateCcw, Undo2, XCircle, Zap } from "lucide-react";
 import { ExecutionEvent } from "@/lib/agent/types";
 
 export function ExecutionTimeline({ events }: { events: ExecutionEvent[] }) {
@@ -15,6 +15,7 @@ function EventIcon({ type }: { type: ExecutionEvent["type"] }) {
   if (type === "task-paused") return <PauseCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />;
   if (type === "task-resumed") return <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-accent" />;
   if (type === "task-retried") return <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 text-accent" />;
+  if (type === "task-rolled-back") return <Undo2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />;
   if (type === "plan-created") return <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-accent" />;
   if (type === "task-created") return <Zap className="mt-0.5 h-4 w-4 shrink-0 text-accent" />;
   return <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />;

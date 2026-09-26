@@ -66,11 +66,19 @@ export interface AgentTask {
   updatedAt: string;
 }
 
+export type AgentErrorCode = "NO_EXECUTABLE_STEP" | "MISSING_ATTACHMENT" | "RESTORED_ATTACHMENT" | "TOOL_NOT_EXECUTABLE" | "FILE_ANALYSIS_FAILED" | "CALCULATION_FAILED" | "UNKNOWN_ERROR";
+export interface AgentError {
+  code: AgentErrorCode;
+  message: string;
+  retryable: boolean;
+  recoveryHint: string;
+}
+
 export interface ExecutionEvent {
   id: string;
   taskId: string;
   stepId?: string;
-  type: "task-created" | "plan-created" | "approval-requested" | "tool-started" | "tool-completed" | "tool-failed" | "task-completed" | "task-failed" | "task-cancelled" | "task-paused" | "task-resumed" | "task-retried";
+  type: "task-created" | "plan-created" | "approval-requested" | "tool-started" | "tool-completed" | "tool-failed" | "task-completed" | "task-failed" | "task-cancelled" | "task-paused" | "task-resumed" | "task-retried" | "task-rolled-back";
   message: string;
   toolId?: string;
   timestamp: string;
