@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Sidebar } from "@/components/sidebar/sidebar";
@@ -20,6 +20,7 @@ import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
 import { createAgentTask } from "@/lib/agent/agent-state";
 import { planAgentTask } from "@/lib/agent/planner";
 import { executeFirstToolStep } from "@/lib/agent/executor";
+import { useAgentTasks } from "@/hooks/use-agent-tasks";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -33,6 +34,8 @@ export default function Home() {
   const [activeAgentTask, setActiveAgentTask] = useState<AgentTask | null>(null);
   const [agentExecution, setAgentExecution] = useState<{ message: string; output?: string; ok: boolean } | null>(null);
   const [executionEvents, setExecutionEvents] = useState<ExecutionEvent[]>([]);
+  const { records, ready: tasksReady, save: saveAgentTask, remove: removeAgentTask } = useAgentTasks();
+  const restoredTask = useRef(false);
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/chat",
@@ -114,11 +117,34 @@ export default function Home() {
       return nextEvents;
     });
   };
+  const handleClearAgentTask = () => {
+    if (activeAgentTask) removeAgentTask(activeAgentTask.id);
+    setActiveAgentTask(null);
+    setAgentExecution(null);
+    setExecutionEvents([]);
+  };
+
+  useEffect(() => {
+    if (!tasksReady || restoredTask.current) return;
+    restoredTask.current = true;
+    const latest = records[0];
+    if (latest) {
+      // Restoring the persisted external snapshot is the purpose of this effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveAgentTask(latest.task);
+      setExecutionEvents(latest.events);
+    }
+  }, [records, tasksReady]);
+
+  useEffect(() => {
+    if (!tasksReady || !activeAgentTask) return;
+    saveAgentTask({ task: activeAgentTask, events: executionEvents, savedAt: new Date().toISOString() });
+  }, [activeAgentTask, executionEvents, saveAgentTask, tasksReady]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
-      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onClearAgentTask={() => { setActiveAgentTask(null); setAgentExecution(null); setExecutionEvents([]); }} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
+      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
