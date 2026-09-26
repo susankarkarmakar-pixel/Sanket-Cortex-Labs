@@ -3,7 +3,8 @@ import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: string; }
 export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
-export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; }
+export interface ChartPoint { label: string; value: number; }
+export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
 export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
@@ -75,7 +76,11 @@ function parseCsv(text: string): CsvTableSummary {
     const total = values.reduce((sum, value) => sum + value, 0);
     return [{ column, count: values.length, average: total / values.length, minimum: Math.min(...values), maximum: Math.max(...values) }];
   });
-  return { columns, rows, rowCount: records.length, missingValueCount, numericStats };
+  const chartColumn = numericStats[0]?.column;
+  const chartColumnIndex = chartColumn ? columns.indexOf(chartColumn) : -1;
+  const labelColumnIndex = columns.findIndex((_, index) => index !== chartColumnIndex);
+  const chartData = chartColumn && chartColumnIndex >= 0 ? { column: chartColumn, points: records.slice(0, 12).flatMap((record, index) => { const value = Number(record[chartColumnIndex]); return Number.isFinite(value) ? [{ label: record[labelColumnIndex]?.trim() || `Row ${index + 1}`, value }] : []; }) } : undefined;
+  return { columns, rows, rowCount: records.length, missingValueCount, numericStats, chartData };
 }
 
 function parseCsvRecords(text: string): string[][] {

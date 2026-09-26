@@ -7,8 +7,9 @@ import { createDefaultToolRegistry } from "@/lib/agent/tools";
 import { ExecutionTimeline } from "@/components/agent/execution-timeline";
 import { DataPreviewTable } from "@/components/agent/data-preview-table";
 import { CsvTableSummary } from "@/lib/agent/tools/file-analysis";
+import { VisualizationPanel } from "@/components/agent/visualization-panel";
 
-type PanelTab = "plan" | "tools" | "files";
+type PanelTab = "plan" | "tools" | "files" | "charts";
 type ExecutionState = { message: string; output?: string; table?: CsvTableSummary; ok: boolean } | null;
 
 interface AgentSidePanelProps { activeTask: AgentTask | null; execution: ExecutionState; events: ExecutionEvent[]; }
@@ -19,7 +20,7 @@ export function AgentSidePanel({ activeTask, execution, events }: AgentSidePanel
   const completedSteps = activeTask?.steps.filter((step) => step.status === "completed").length || 0;
   const totalSteps = activeTask?.steps.length || 0;
   const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : activeTask ? 5 : 0;
-  return <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border-main/60 bg-bg-main xl:flex" aria-label="Agent execution panel"><div className="flex items-center gap-1 border-b border-border-main/60 px-3 py-3"><PanelTabButton active={tab === "plan"} onClick={() => setTab("plan")} icon={<ListChecks className="h-4 w-4" />} label="Plan & Progress" /><PanelTabButton active={tab === "tools"} onClick={() => setTab("tools")} icon={<Wrench className="h-4 w-4" />} label="Tools" /><PanelTabButton active={tab === "files"} onClick={() => setTab("files")} icon={<FolderOpen className="h-4 w-4" />} label="Files" /></div><div className="min-h-0 flex-1 overflow-y-auto p-4 custom-scrollbar">{tab === "plan" && <PlanPanel activeTask={activeTask} progress={progress} execution={execution} events={events} />}{tab === "tools" && <ToolsPanel tools={tools} activeTask={activeTask} />}{tab === "files" && <FilesPanel activeTask={activeTask} />}</div></aside>;
+  return <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border-main/60 bg-bg-main xl:flex" aria-label="Agent execution panel"><div className="flex items-center gap-1 border-b border-border-main/60 px-3 py-3"><PanelTabButton active={tab === "plan"} onClick={() => setTab("plan")} icon={<ListChecks className="h-4 w-4" />} label="Plan & Progress" /><PanelTabButton active={tab === "tools"} onClick={() => setTab("tools")} icon={<Wrench className="h-4 w-4" />} label="Tools" /><PanelTabButton active={tab === "files"} onClick={() => setTab("files")} icon={<FolderOpen className="h-4 w-4" />} label="Files" /><PanelTabButton active={tab === "charts"} onClick={() => setTab("charts")} icon={<BarChart3 className="h-4 w-4" />} label="Charts" /></div><div className="min-h-0 flex-1 overflow-y-auto p-4 custom-scrollbar">{tab === "plan" && <PlanPanel activeTask={activeTask} progress={progress} execution={execution} events={events} />}{tab === "tools" && <ToolsPanel tools={tools} activeTask={activeTask} />}{tab === "files" && <FilesPanel activeTask={activeTask} />}{tab === "charts" && <VisualizationPanel table={execution?.table} />}</div></aside>;
 }
 
 function PanelTabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) { return <button type="button" onClick={onClick} aria-pressed={active} className={`flex min-w-0 items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors ${active ? "bg-sidebar-cocoa text-white" : "text-text-muted hover:bg-black/5 hover:text-text-main"}`}><span className="shrink-0">{icon}</span><span className="truncate">{label}</span></button>; }
