@@ -19,7 +19,7 @@ interface AgentTaskComposerProps {
 const MAX_GOAL_LENGTH = 2_000;
 const MAX_FILES = 3;
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
-const ACCEPTED_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json"]);
+const ACCEPTED_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]);
 
 export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTask, onPauseTask, onResumeTask, onRetryTask, onCancelTask, onClearTask }: AgentTaskComposerProps) {
   const [goal, setGoal] = useState("");
@@ -49,7 +49,7 @@ export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTa
     for (const file of Array.from(selected)) {
       if (next.length >= MAX_FILES) { setError(`You can attach up to ${MAX_FILES} files.`); break; }
       if (file.size > MAX_FILE_SIZE) { setError(`${file.name} is larger than 4 MB.`); continue; }
-      if (!ACCEPTED_TYPES.has(file.type) && !/\.(txt|md|csv|json)$/i.test(file.name)) { setError(`${file.name} is not supported. Use TXT, Markdown, CSV, or JSON.`); continue; }
+      if (!ACCEPTED_TYPES.has(file.type) && !/\.(txt|md|csv|json|pdf|docx|xlsx)$/i.test(file.name)) { setError(`${file.name} is not supported. Use TXT, Markdown, CSV, JSON, PDF, DOCX, or XLSX.`); continue; }
       if (!next.some((existing) => existing.name === file.name && existing.size === file.size)) next.push(file);
     }
     setFiles(next);
@@ -81,9 +81,9 @@ export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTa
           </div>
         ) : (
           <form onSubmit={(event) => void handleSubmit(event)} className="space-y-3">
-            <textarea value={goal} onChange={(event) => { setGoal(event.target.value); if (error) setError(null); }} placeholder="Example: Analyze the attached CSV and prepare a concise summary." aria-label="Agent task goal" maxLength={MAX_GOAL_LENGTH} rows={3} className="w-full resize-none rounded-xl border border-border-main/70 bg-bg-main px-4 py-3 text-sm leading-6 text-text-main outline-none placeholder:text-text-muted/60 focus:border-accent/50 focus:ring-4 focus:ring-accent/10" />
+            <textarea value={goal} onChange={(event) => { setGoal(event.target.value); if (error) setError(null); }} placeholder="Example: Analyze the attached CSV or PDF and prepare a concise summary." aria-label="Agent task goal" maxLength={MAX_GOAL_LENGTH} rows={3} className="w-full resize-none rounded-xl border border-border-main/70 bg-bg-main px-4 py-3 text-sm leading-6 text-text-main outline-none placeholder:text-text-muted/60 focus:border-accent/50 focus:ring-4 focus:ring-accent/10" />
             {files.length > 0 && <div className="flex flex-wrap gap-2">{files.map((file, index) => <span key={`${file.name}-${file.size}`} className="flex items-center gap-1.5 rounded-lg bg-cream-highlight px-2.5 py-1.5 text-xs text-text-main"><Paperclip className="h-3 w-3 text-accent" /><span className="max-w-[180px] truncate">{file.name}</span><button type="button" onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} aria-label={`Remove ${file.name}`} className="text-text-muted hover:text-text-main"><X className="h-3 w-3" /></button></span>)}</div>}
-            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><input ref={fileInputRef} type="file" multiple accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" className="sr-only" onChange={(event) => handleFiles(event.target.files)} /><button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Attach files" className="flex items-center gap-1.5 rounded-lg border border-border-main/70 px-2.5 py-2 text-xs font-medium text-text-muted hover:bg-black/5 hover:text-text-main"><Paperclip className="h-3.5 w-3.5" />Attach</button><span className="hidden text-xs text-text-muted sm:inline">TXT, MD, CSV, JSON · max 4 MB each</span></div><button type="submit" disabled={!goal.trim()} className="flex shrink-0 items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="h-4 w-4" />Create task</button></div>
+            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><input ref={fileInputRef} type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx,text/plain,text/markdown,text/csv,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" onChange={(event) => handleFiles(event.target.files)} /><button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Attach files" className="flex items-center gap-1.5 rounded-lg border border-border-main/70 px-2.5 py-2 text-xs font-medium text-text-muted hover:bg-black/5 hover:text-text-main"><Paperclip className="h-3.5 w-3.5" />Attach</button><span className="hidden text-xs text-text-muted sm:inline">TXT, MD, CSV, JSON, PDF, DOCX, XLSX · max 4 MB each</span></div><button type="submit" disabled={!goal.trim()} className="flex shrink-0 items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="h-4 w-4" />Create task</button></div>
             {error && <p role="alert" className="text-xs font-medium text-red-600">{error}</p>}
           </form>
         )}
@@ -95,7 +95,18 @@ export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTa
 
 async function toAgentAttachment(file: File): Promise<AgentAttachment> {
   const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error || new Error(`Could not read ${file.name}`)); reader.readAsDataURL(file); });
-  return { id: crypto.randomUUID(), filename: file.name, mediaType: file.type || "text/plain", sizeBytes: file.size, dataUrl };
+  return { id: crypto.randomUUID(), filename: file.name, mediaType: file.type || inferMediaType(file.name), sizeBytes: file.size, dataUrl };
+}
+
+function inferMediaType(filename: string): string {
+  const extension = filename.toLowerCase().split(".").pop();
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (extension === "xlsx") return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  if (extension === "json") return "application/json";
+  if (extension === "csv") return "text/csv";
+  if (extension === "md") return "text/markdown";
+  return "text/plain";
 }
 
 function formatStatus(status: AgentTask["status"]): string { return status.replaceAll("_", " "); }

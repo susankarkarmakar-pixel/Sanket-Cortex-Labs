@@ -14,7 +14,7 @@ export function createPlanSteps(goal: string): AgentPlanStep[] {
         ["Calculate the result", "Use the safe calculator tool.", "calculator"],
         ["Present the result", "Explain the result clearly and include the expression used."],
       ]
-    : normalized.includes("file") || normalized.includes("csv") || normalized.includes("excel") || normalized.includes("document") || normalized.includes("pdf")
+    : normalized.includes("file") || normalized.includes("csv") || normalized.includes("excel") || normalized.includes("xlsx") || normalized.includes("document") || normalized.includes("docx") || normalized.includes("pdf")
       ? [
           ["Understand the file and requirements", "Identify the requested output and available file context."],
           ["Analyze the file", "Inspect supported file metadata and bounded content preview.", "file-analysis"],

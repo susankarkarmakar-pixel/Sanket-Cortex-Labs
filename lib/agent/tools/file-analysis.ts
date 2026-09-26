@@ -20,11 +20,16 @@ interface FileAnalysisOutput {
 const MAX_DATA_URL_LENGTH = 16_000_000;
 const MAX_PREVIEW_LENGTH = 12_000;
 const TEXT_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json"]);
+const DOCUMENT_TYPES = new Map([
+  ["application/pdf", "PDF"],
+  ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "DOCX"],
+  ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "XLSX"],
+]);
 
 export const fileAnalysisTool: ToolDefinition<FileAnalysisInput, FileAnalysisOutput> = {
   id: "file-analysis",
   name: "File Analysis",
-  description: "Inspect an attached text, Markdown, CSV, or JSON file and return safe metadata and a bounded preview.",
+  description: "Inspect supported text files and identify PDF, DOCX, and XLSX attachments with safe metadata.",
   permission: "read-only",
   inputSchema: {
     type: "object",
@@ -40,11 +45,12 @@ export const fileAnalysisTool: ToolDefinition<FileAnalysisInput, FileAnalysisOut
     if (context.signal.aborted) throw new Error("File analysis was cancelled.");
     validateInput(input);
     if (!TEXT_TYPES.has(input.mediaType)) {
+      const documentType = DOCUMENT_TYPES.get(input.mediaType);
       return {
         filename: input.filename,
         mediaType: input.mediaType,
         sizeBytes: estimateDataSize(input.dataUrl),
-        note: "This read-only analyzer currently supports TXT, Markdown, CSV, and JSON files.",
+        note: documentType ? `${documentType} file detected. Binary text/table extraction will be connected in the next document-analysis phase.` : "This read-only analyzer supports TXT, Markdown, CSV, JSON, PDF, DOCX, and XLSX metadata.",
       };
     }
 

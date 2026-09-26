@@ -19,6 +19,10 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
       return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: "File Analysis needs an attached TXT, Markdown, CSV, or JSON file." };
     }
+    if (!attachment.dataUrl) {
+      const failedTask = updateStepStatus(runningTask, step.id, "failed");
+      return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: `${attachment.filename} was restored as metadata only. Re-attach the file before running File Analysis.` };
+    }
     try {
       const result = await fileAnalysisTool.execute({ filename: attachment.filename, mediaType: attachment.mediaType, dataUrl: attachment.dataUrl }, context);
       const completedTask = updateStepStatus(runningTask, step.id, "completed");
