@@ -13,6 +13,7 @@ export type ModelOption = Exclude<ModelProvider, "manus"> | string;
 interface ModelSelectorProps {
   selected: ModelOption;
   onSelect: (model: ModelOption) => void;
+  collapsed?: boolean;
 }
 
 const MODEL_ICONS: Record<Exclude<ModelProvider, "manus">, LucideIcon> = {
@@ -34,7 +35,7 @@ const MODELS = INSTANT_CHAT_PROVIDERS.map((id) => ({
   icon: MODEL_ICONS[id],
 }));
 
-export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
+export function ModelSelector({ selected, onSelect, collapsed = false }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [keys, setKeys] = useState<ApiKeys>({});
   const [activeIndex, setActiveIndex] = useState(0);
@@ -84,15 +85,16 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={`Select model, current model ${selectedModel.name}`}
-        className="w-full flex items-center justify-between px-3 py-2.5 bg-surface hover:bg-black/5 rounded-xl border border-border-main/50 transition-colors text-sm text-text-main shadow-sm"
+        title={collapsed ? selectedModel.name : undefined}
+        className={cn("w-full flex items-center justify-between rounded-xl border transition-colors shadow-sm", collapsed ? "px-2.5 py-2.5 bg-white/10 border-white/15 text-white" : "px-3 py-2.5 bg-surface hover:bg-black/5 border-border-main/50 text-text-main")}
       >
         <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-accent" />
-          <span className="truncate font-medium">{selectedModel.name}</span>
+          <Icon className={cn("w-4 h-4 shrink-0", collapsed ? "text-cream-highlight" : "text-accent")} />
+          {!collapsed && <span className="truncate font-medium">{selectedModel.name}</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className={cn("w-1.5 h-1.5 rounded-full", getApiKey(selectedModel.id, keys) ? "bg-green-500" : "bg-red-400")} />
-          <ChevronDown className={cn("w-4 h-4 text-text-muted transition-transform", isOpen && "rotate-180")} />
+          {!collapsed && <div className={cn("w-1.5 h-1.5 rounded-full", getApiKey(selectedModel.id, keys) ? "bg-green-500" : "bg-red-400")} />}
+          <ChevronDown className={cn("w-4 h-4 transition-transform", collapsed ? "text-cream-highlight" : "text-text-muted", isOpen && "rotate-180")} />
         </div>
       </button>
 
@@ -102,7 +104,7 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div role="listbox" aria-label="Available AI models" className="absolute z-20 w-full mt-1.5 bg-surface border border-border-main rounded-xl shadow-lg overflow-hidden py-1">
+          <div role="listbox" aria-label="Available AI models" className="absolute z-20 mt-1.5 w-[min(300px,calc(100vw-2rem))] min-w-full overflow-hidden rounded-xl border border-border-main bg-white py-1 text-text-main shadow-lg">
             {availableModels.map((model) => {
               const ModelIcon = model.icon;
               const hasKey = !!getApiKey(model.id, keys);
@@ -140,13 +142,11 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
                     }
                   }}
                   className={cn(
-                    "w-full flex items-start gap-3 px-3 py-2.5 text-sm transition-colors group",
-                    selected === model.id
-                      ? "bg-black/5 text-text-main"
-                      : "text-text-main hover:bg-black/5"
+                      "w-full flex items-start gap-3 px-3 py-2.5 text-sm transition-colors group",
+                      selected === model.id ? "bg-cream-highlight text-text-main" : "text-slate-800 hover:bg-slate-100"
                   )}
                 >
-                  <ModelIcon className={cn("w-4 h-4 mt-0.5 shrink-0", selected === model.id ? "text-accent" : "text-text-muted group-hover:text-text-main")} />
+                  <ModelIcon className={cn("w-4 h-4 mt-0.5 shrink-0", selected === model.id ? "text-accent" : "text-slate-500 group-hover:text-slate-900")} />
                   <div className="flex flex-col items-start flex-1 overflow-hidden">
                     <div className="flex items-center justify-between w-full">
                       <span className="font-medium truncate">{model.name}</span>
@@ -154,7 +154,7 @@ export function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
                     </div>
                     <span className={cn(
                       "text-[11px] truncate w-full text-left mt-0.5",
-                      selected === model.id ? "text-text-muted" : "text-text-muted/70 group-hover:text-text-muted"
+                      selected === model.id ? "text-slate-600" : "text-slate-500 group-hover:text-slate-700"
                     )}>
                       {model.description}
                     </span>

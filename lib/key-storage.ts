@@ -10,6 +10,7 @@ export interface ApiKeys {
   manus?: string;
   sarvam?: string;
   openrouter?: string;
+  jules?: string;
 }
 
 const STORAGE_KEY = "susan_api_keys_v1";

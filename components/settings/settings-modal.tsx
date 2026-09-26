@@ -40,14 +40,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [customError, setCustomError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
-  const wasOpen = useRef(false);
 
   // Only update keys when opening the modal, to avoid state lag
   // Since this component might be mounted but hidden, we load keys when it opens
   useEffect(() => {
     if (isOpen) {
-      previouslyFocused.current = document.activeElement as HTMLElement | null;
       const storedKeys = getKeys();
       const storedMode = getKeyStorageMode();
       // Use setTimeout to avoid synchronous setState inside effect
@@ -66,17 +63,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) {
-      // The parent re-renders on every typed character. Only restore focus
-      // after a real open -> closed transition, not on every hidden render.
-      if (wasOpen.current) {
-        previouslyFocused.current?.focus();
-        previouslyFocused.current = null;
-        wasOpen.current = false;
-      }
-      return;
-    }
-    wasOpen.current = true;
+    if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -245,6 +232,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             value={keys.google || ""}
             onChange={(val) => handleKeyChange("google", val)}
             isSaved={!!savedKeys.google}
+          />
+          <ApiKeyInput
+            label="Google Jules Coding Agent API Key"
+            provider="jules"
+            placeholder="Jules API key"
+            helpUrl="https://jules.google.com/settings"
+            value={keys.jules || ""}
+            onChange={(val) => handleKeyChange("jules", val)}
+            isSaved={!!savedKeys.jules}
           />
           <ApiKeyInput
             label="OpenAI API Key (ChatGPT)"

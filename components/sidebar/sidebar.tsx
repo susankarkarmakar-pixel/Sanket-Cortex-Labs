@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings, X, Trash2, Download, Upload, Trash, Info, Home, MessageSquare, Bot, FolderKanban, Workflow, Network, Puzzle, FileText } from "lucide-react";
+import { Plus, Settings, X, Trash2, Download, Upload, Trash, Info, Home, MessageSquare, Bot, FolderKanban, Workflow, Network, Puzzle, FileText, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector, ModelOption } from "./model-selector";
 import { ConversationSummary, getConversations, deleteConversation, clearConversations, exportConversations, importConversations } from "@/lib/chat-storage";
@@ -16,6 +16,8 @@ interface SidebarProps {
   onLoadConversation: (id: string) => void;
   currentConversationId: string | null;
   onOpenAbout: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 export function Sidebar({
@@ -26,7 +28,9 @@ export function Sidebar({
   onNewChat,
   onLoadConversation,
   currentConversationId,
-  onOpenAbout
+  onOpenAbout,
+  collapsed,
+  onToggleCollapsed
 }: SidebarProps) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
 
@@ -97,30 +101,31 @@ export function Sidebar({
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-[300px] bg-sidebar-cocoa text-white flex flex-col transition-transform duration-300 ease-in-out border-r border-white/10",
+        "fixed inset-y-0 left-0 z-50 bg-sidebar-cocoa text-white flex flex-col transition-[width,transform] duration-300 ease-in-out border-r border-white/10",
+        collapsed ? "w-[78px]" : "w-[300px]",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         "lg:static lg:inset-0"
       )}>
-        <div className="flex-1 flex flex-col p-5 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 custom-scrollbar">
           {/* Header */}
-          <div className="flex items-center justify-between mb-7">
+          <div className={cn("flex items-center mb-7", collapsed ? "justify-center" : "justify-between")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/susan-ai-logo-sidebar-dark.png"
               alt="Susan AI — Sanket Pixel Technologies"
-              className="w-60 max-w-full h-auto max-h-20 object-contain object-left"
+              className={cn("h-auto max-h-20 object-contain object-left", collapsed ? "w-10" : "w-60 max-w-full")}
             />
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/10 lg:hidden text-white/70 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={onToggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"} className="hidden rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white lg:block">
+                {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+              </button>
+              <button type="button" onClick={onClose} aria-label="Close sidebar" className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white lg:hidden"><X className="w-5 h-5" /></button>
+            </div>
           </div>
 
           {/* Model Selector */}
-          <div className="mb-5 [&>div>button]:bg-white/10 [&>div>button]:border-white/10 [&>div>button]:text-white [&>div>button]:shadow-none [&>div>button:hover]:bg-white/15 [&_svg]:text-cream-highlight [&_span]:text-white">
-            <ModelSelector selected={selectedModel} onSelect={onSelectModel} />
+          <div className="mb-5 [&>div>button]:shadow-none [&_svg]:text-cream-highlight">
+            <ModelSelector selected={selectedModel} onSelect={onSelectModel} collapsed={collapsed} />
           </div>
 
           {/* New Chat Button */}
@@ -129,13 +134,14 @@ export function Sidebar({
               onNewChat();
               if (window.innerWidth < 1024) onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-cream-highlight text-sidebar-cocoa shadow-sm hover:bg-white transition-colors mb-6 text-sm font-semibold"
+            title="New Chat"
+            className={cn("w-full flex items-center justify-center gap-2 rounded-full bg-cream-highlight text-sidebar-cocoa shadow-sm hover:bg-white transition-colors mb-6 text-sm font-semibold", collapsed ? "px-2 py-3" : "px-4 py-3")}
           >
             <Plus className="w-4 h-4" />
-            New Chat
+            {!collapsed && "New Chat"}
           </button>
 
-          <nav className="mb-5 space-y-1" aria-label="Primary navigation">
+          <nav className={cn("mb-5 space-y-1", collapsed && "hidden")} aria-label="Primary navigation">
             <SidebarNavItem icon={<Home className="h-4 w-4" />} label="Home" />
             <SidebarNavItem icon={<MessageSquare className="h-4 w-4" />} label="Chat" />
             <SidebarNavItem icon={<Bot className="h-4 w-4" />} label="Agent Mode" active />
@@ -145,11 +151,11 @@ export function Sidebar({
             <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Plugins" />
             <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Documents" />
           </nav>
-          <div className="mb-3 flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45"><span>Pinned agents</span><span>⌃</span></div>
-          <div className="mb-4 space-y-1"><PinnedAgent label="General Assistant" /><PinnedAgent label="Data & Report Agent" /><PinnedAgent label="Study & Research Agent" /></div>
+          {!collapsed && <><div className="mb-3 flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45"><span>Pinned agents</span><span>⌃</span></div>
+          <div className="mb-4 space-y-1"><PinnedAgent label="General Assistant" /><PinnedAgent label="Data & Report Agent" /><PinnedAgent label="Study & Research Agent" /></div></>}
 
           {/* Chat History */}
-          <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+          <div className={cn("min-h-0 flex-1 pr-1", collapsed && "hidden")}>
             {conversations.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-white/45 text-sm">
                 No conversations yet
@@ -197,7 +203,7 @@ export function Sidebar({
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-1.5 mt-3">
+          <div className={cn("grid grid-cols-1 gap-1.5 mt-3", collapsed && "hidden")}>
             <button type="button" onClick={handleExport} title="Export conversations" className="flex items-center justify-start gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/75 hover:bg-white/10 hover:text-white">
               <Download className="h-3.5 w-3.5" /> Export
             </button>
@@ -211,24 +217,26 @@ export function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-white/10 flex flex-col gap-3">
+        <div className={cn("border-t border-white/10 flex flex-col gap-3", collapsed ? "items-center p-3" : "p-5")}>
           <button
             onClick={() => document.dispatchEvent(new CustomEvent('open-settings'))}
-            className="flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 w-full text-sm font-medium"
+            title="Settings"
+            className={cn("flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 text-sm font-medium", collapsed ? "justify-center" : "w-full")}
           >
             <Settings className="w-4 h-4" />
-            <span>Settings</span>
+            {!collapsed && <span>Settings</span>}
           </button>
           <button
             onClick={onOpenAbout}
-            className="flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 w-full text-sm font-medium"
+            title="About"
+            className={cn("flex items-center gap-2 text-white/75 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 text-sm font-medium", collapsed ? "justify-center" : "w-full")}
           >
             <Info className="w-4 h-4" />
-            <span>About</span>
+            {!collapsed && <span>About</span>}
           </button>
-          <div className="text-center text-[10px] text-white/40">
+          {!collapsed && <div className="text-center text-[10px] text-white/40">
             © 2026 Sanket Pixel Technologies
-          </div>
+          </div>}
         </div>
       </div>
     </>

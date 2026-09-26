@@ -13,7 +13,7 @@ export interface AppSettings {
 
 const STORAGE_KEY = "susan_app_settings_v1";
 export const DEFAULT_APP_SETTINGS: AppSettings = {
-  defaultProvider: "deepseek",
+  defaultProvider: "google",
   language: "auto",
   startupBehavior: "welcome",
   autoSave: true,

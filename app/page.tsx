@@ -11,7 +11,7 @@ import { AboutModal } from "@/components/about/about-modal";
 import { useApiKeys } from "@/hooks/use-api-keys";
 import { useConversation } from "@/hooks/use-conversation";
 import { useAppSettings } from "@/hooks/use-app-settings";
-import { getAppSettings } from "@/lib/app-settings";
+import { getApiKey } from "@/lib/key-storage";
 import { fileToUIPart } from "@/lib/file-attachments";
 import { Message } from "@/components/chat/chat-messages";
 import { getCustomProviders } from "@/lib/custom-providers";
@@ -24,9 +24,10 @@ import { useAgentTasks } from "@/hooks/use-agent-tasks";
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ModelOption>(() => getAppSettings().defaultProvider as ModelOption);
+  const [selectedModel, setSelectedModel] = useState<ModelOption>("google");
   const [input, setInput] = useState("");
   const { keys, keyVersion } = useApiKeys();
   const { settings } = useAppSettings();
@@ -37,6 +38,21 @@ export default function Home() {
   const safeTaskSnapshot = useRef<AgentTask | null>(null);
   const { records, ready: tasksReady, save: saveAgentTask, remove: removeAgentTask } = useAgentTasks();
   const restoredTask = useRef(false);
+
+  useEffect(() => {
+    // Prefer Gemini by default, then fall back to the first provider whose key
+    // is actually configured. This also fixes the common BYOK flow where a
+    // newly saved key should immediately become the active model.
+    if (getApiKey(selectedModel, keys)) return;
+    const preferred = getApiKey("google", keys)
+      ? "google"
+      : ["openai", "anthropic", "deepseek", "qwen", "kimi", "sarvam", "openrouter", "huggingface"].find((provider) => getApiKey(provider, keys));
+    if (preferred && preferred !== selectedModel) {
+      // This effect synchronizes the selected model with externally stored BYOK keys.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedModel(preferred);
+    }
+  }, [keyVersion, keys, selectedModel]);
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/chat",
@@ -224,7 +240,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} collapsed={isSidebarCollapsed} onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
       <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onApproveAgentStep={handleApproveAgentStep} onRejectAgentStep={handleRejectAgentStep} onRollbackAgentTask={handleRollbackAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
