@@ -41,6 +41,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const wasOpen = useRef(false);
 
   // Only update keys when opening the modal, to avoid state lag
   // Since this component might be mounted but hidden, we load keys when it opens
@@ -66,9 +67,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (!isOpen) {
-      previouslyFocused.current?.focus();
+      // The parent re-renders on every typed character. Only restore focus
+      // after a real open -> closed transition, not on every hidden render.
+      if (wasOpen.current) {
+        previouslyFocused.current?.focus();
+        previouslyFocused.current = null;
+        wasOpen.current = false;
+      }
       return;
     }
+    wasOpen.current = true;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
