@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bot, Menu, MessageSquare, Settings, Sparkles } from "lucide-react";
-import { ModelOption } from "@/components/sidebar/model-selector";
+import { ModelOption, ModelSelector } from "@/components/sidebar/model-selector";
 import { AgentMode } from "@/lib/agent/mode";
 import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
 import { AgentExecutionOutcome } from "@/lib/agent/executor";
@@ -36,6 +36,7 @@ interface ChatAreaProps {
   onClearAgentTask: () => void;
   onOpenSidebar: () => void;
   selectedModel: ModelOption;
+  onSelectModel: (model: ModelOption) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   messages: any[];
   input: string;
@@ -49,7 +50,7 @@ interface ChatAreaProps {
   onPrompt: (prompt: string) => void;
 }
 
-export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onApproveAgentStep, onRejectAgentStep, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
+export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onApproveAgentStep, onRejectAgentStep, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, onSelectModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
   const customProvider = getCustomProviders().find((provider) => provider.id === selectedModel);
   const modelMetadata = MODELS_METADATA[selectedModel as keyof typeof MODELS_METADATA];
@@ -98,8 +99,8 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
             <ModeButton mode="chat" activeMode={mode} onSelect={onModeChange} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" />
             <ModeButton mode="agent" activeMode={mode} onSelect={onModeChange} icon={<Bot className="h-3.5 w-3.5" />} label="Agent" />
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-border-main/60 bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm">
-            <span>{modelMetadata?.icon || "✦"}</span><span className="hidden sm:inline">{modelName}</span>
+          <div className="w-[150px] sm:w-[205px] [&>div>button]:rounded-full [&>div>button]:py-2 [&>div>button]:shadow-sm">
+            <ModelSelector selected={selectedModel} onSelect={onSelectModel} />
           </div>
           <button type="button" onClick={() => document.dispatchEvent(new CustomEvent("open-settings"))} aria-label="Open settings" className="rounded-full border border-border-main/60 bg-surface p-2.5 text-text-muted shadow-sm hover:text-text-main"><Settings className="h-4 w-4" /></button>
         </div>
