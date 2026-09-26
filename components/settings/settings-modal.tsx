@@ -240,6 +240,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "general" }: Setti
             provider="jules"
             placeholder="Jules API key"
             helpUrl="https://jules.google.com/settings"
+            helpText="Use the key from Jules Settings (not a Gemini/AI Studio key). Connect the GitHub repository to Jules under the same account before testing."
             value={keys.jules || ""}
             onChange={(val) => handleKeyChange("jules", val)}
             isSaved={!!savedKeys.jules}

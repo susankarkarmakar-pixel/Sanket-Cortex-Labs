@@ -9,6 +9,7 @@ interface ApiKeyInputProps {
   provider: string;
   placeholder: string;
   helpUrl: string;
+  helpText?: string;
   value: string;
   onChange: (val: string) => void;
   isSaved: boolean;
@@ -18,6 +19,7 @@ export function ApiKeyInput({
   label,
   placeholder,
   helpUrl,
+  helpText,
   value,
   onChange,
   isSaved,
@@ -61,6 +63,7 @@ export function ApiKeyInput({
           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
       </div>
+      {helpText && <p className="text-xs leading-5 text-text-muted">{helpText}</p>}
     </div>
   );
 }

@@ -91,11 +91,13 @@ export async function POST(request: Request) {
       return jsonError("Security rate limiting is temporarily unavailable. Try again shortly.", 503, { "Retry-After": "30" });
     }
     if (error instanceof JulesApiError) {
-      const status = error.status === 401 || error.status === 403 ? 401
+      const status = error.status === 401 ? 401
+        : error.status === 403 ? 403
         : error.status === 404 ? 404
           : error.status === 429 ? 429
             : error.status >= 500 ? 502 : 400;
-      const message = status === 401 ? "Jules rejected the API key or this account lacks access. Check the key and connected repository permissions."
+      const message = status === 401 ? "Jules rejected this API key. Generate or copy the key from https://jules.google.com/settings (not Google AI Studio), then save it again in Susan AI Settings."
+        : status === 403 ? "Jules denied access for this account. Sign in to Jules with the same account as the key, connect the GitHub repository there, and grant the Jules GitHub App access to that repository."
         : status === 404 ? "Jules could not find that repository or session. Refresh the repository list and check the session."
           : status === 429 ? "Jules rate limit or quota reached. Wait a moment and try again."
             : status === 502 ? "Jules is temporarily unavailable. Try again shortly."
