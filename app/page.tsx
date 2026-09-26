@@ -17,7 +17,7 @@ import { Message } from "@/components/chat/chat-messages";
 import { getCustomProviders } from "@/lib/custom-providers";
 import { useAgentMode } from "@/hooks/use-agent-mode";
 import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
-import { createAgentTask } from "@/lib/agent/agent-state";
+import { createAgentTask, transitionTask, updateStepStatus } from "@/lib/agent/agent-state";
 import { planAgentTask } from "@/lib/agent/planner";
 import { executeFirstToolStep } from "@/lib/agent/executor";
 import { useAgentTasks } from "@/hooks/use-agent-tasks";
@@ -117,6 +117,36 @@ export default function Home() {
       return nextEvents;
     });
   };
+  const handlePauseAgentTask = () => {
+    if (!activeAgentTask || activeAgentTask.status !== "running") return;
+    const task = transitionTask(activeAgentTask, "paused");
+    setActiveAgentTask(task);
+    setAgentExecution({ message: "Task paused. Resume when you are ready to continue.", ok: true });
+    setExecutionEvents((events) => [...events, createExecutionEvent(task.id, "task-paused", "Task paused")]);
+  };
+  const handleResumeAgentTask = () => {
+    if (!activeAgentTask || activeAgentTask.status !== "paused") return;
+    const task = transitionTask(activeAgentTask, "running");
+    setActiveAgentTask(task);
+    setAgentExecution({ message: "Task resumed. Run the next pending step to continue.", ok: true });
+    setExecutionEvents((events) => [...events, createExecutionEvent(task.id, "task-resumed", "Task resumed")]);
+  };
+  const handleRetryAgentTask = () => {
+    if (!activeAgentTask || activeAgentTask.status !== "failed") return;
+    const failedStep = activeAgentTask.steps.find((step) => step.status === "failed");
+    if (!failedStep) return;
+    const task = transitionTask(updateStepStatus(activeAgentTask, failedStep.id, "pending"), "planning");
+    setActiveAgentTask(task);
+    setAgentExecution({ message: `Retrying: ${failedStep.title}`, ok: true });
+    setExecutionEvents((events) => [...events, createExecutionEvent(task.id, "task-retried", `Retrying ${failedStep.title}`, failedStep.id, failedStep.toolId)]);
+  };
+  const handleCancelAgentTask = () => {
+    if (!activeAgentTask || ["completed", "cancelled"].includes(activeAgentTask.status)) return;
+    const task = transitionTask(activeAgentTask, "cancelled");
+    setActiveAgentTask(task);
+    setAgentExecution({ message: "Task cancelled.", ok: false });
+    setExecutionEvents((events) => [...events, createExecutionEvent(task.id, "task-cancelled", "Task cancelled")]);
+  };
   const handleClearAgentTask = () => {
     if (activeAgentTask) removeAgentTask(activeAgentTask.id);
     setActiveAgentTask(null);
@@ -144,7 +174,7 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
-      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
+      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
