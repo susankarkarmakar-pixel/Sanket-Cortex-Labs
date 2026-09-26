@@ -91,11 +91,14 @@ export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTa
             {error && <p role="alert" className="text-xs font-medium text-red-600">{error}</p>}
           </form>
         )}
+        {!activeTask && <div className="mt-3 flex flex-wrap gap-2 border-t border-border-main/50 pt-3"><QuickAction label="Analyze file" /><QuickAction label="Create chart" /><QuickAction label="Generate report" /><QuickAction label="Write document" /><QuickAction label="More tools" /></div>}
       </div>
       {!activeTask && <div className="flex items-center gap-2 px-1 text-xs text-text-muted"><Plus className="h-3.5 w-3.5 text-accent" />Try a specific goal; the Agent will turn it into a safe first plan.</div>}
     </section>
   );
 }
+
+function QuickAction({ label }: { label: string }) { return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="rounded-lg border border-border-main/70 bg-bg-main px-3 py-1.5 text-[10px] font-semibold text-text-muted hover:bg-cream-highlight hover:text-accent">{label}</button>; }
 
 async function toAgentAttachment(file: File): Promise<AgentAttachment> {
   const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error || new Error(`Could not read ${file.name}`)); reader.readAsDataURL(file); });

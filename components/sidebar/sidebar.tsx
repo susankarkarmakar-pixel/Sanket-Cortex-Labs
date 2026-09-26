@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings, X, Trash2, Download, Upload, Trash, Info } from "lucide-react";
+import { Plus, Settings, X, Trash2, Download, Upload, Trash, Info, Home, MessageSquare, Bot, FolderKanban, Workflow, Network, Puzzle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector, ModelOption } from "./model-selector";
 import { ConversationSummary, getConversations, deleteConversation, clearConversations, exportConversations, importConversations } from "@/lib/chat-storage";
@@ -135,6 +135,19 @@ export function Sidebar({
             New Chat
           </button>
 
+          <nav className="mb-5 space-y-1" aria-label="Primary navigation">
+            <SidebarNavItem icon={<Home className="h-4 w-4" />} label="Home" />
+            <SidebarNavItem icon={<MessageSquare className="h-4 w-4" />} label="Chat" />
+            <SidebarNavItem icon={<Bot className="h-4 w-4" />} label="Agent Mode" active />
+            <SidebarNavItem icon={<FolderKanban className="h-4 w-4" />} label="Projects" />
+            <SidebarNavItem icon={<Workflow className="h-4 w-4" />} label="Workflows" />
+            <SidebarNavItem icon={<Network className="h-4 w-4" />} label="Knowledge Base" />
+            <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Plugins" />
+            <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Documents" />
+          </nav>
+          <div className="mb-3 flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45"><span>Pinned agents</span><span>⌃</span></div>
+          <div className="mb-4 space-y-1"><PinnedAgent label="General Assistant" /><PinnedAgent label="Data & Report Agent" /><PinnedAgent label="Study & Research Agent" /></div>
+
           {/* Chat History */}
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
             {conversations.length === 0 ? (
@@ -220,4 +233,12 @@ export function Sidebar({
       </div>
     </>
   );
+}
+
+function SidebarNavItem({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
+  return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors", active ? "bg-sidebar-cocoa-soft text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}><span className={active ? "text-cream-highlight" : "text-white/65"}>{icon}</span><span>{label}</span>{active && <span className="ml-auto rounded-full bg-cream-highlight px-2 py-0.5 text-[9px] font-bold text-sidebar-cocoa">NEW</span>}</button>;
+}
+
+function PinnedAgent({ label }: { label: string }) {
+  return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"><span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/10 text-cream-highlight">✦</span><span className="truncate">{label}</span></button>;
 }

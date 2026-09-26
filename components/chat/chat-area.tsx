@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bot, Menu, MessageSquare, Settings, Sparkles } from "lucide-react";
 import { ModelOption } from "@/components/sidebar/model-selector";
 import { AgentMode } from "@/lib/agent/mode";
@@ -9,6 +9,7 @@ import { AgentExecutionOutcome } from "@/lib/agent/executor";
 import { AgentTaskComposer } from "@/components/agent/agent-task-composer";
 import { AgentSidePanel } from "@/components/agent/agent-side-panel";
 import { InlineAgentTaskCard } from "@/components/agent/inline-agent-task-card";
+import { AgentOutputWorkspace } from "@/components/agent/agent-output-workspace";
 import { ApprovalModal } from "@/components/agent/approval-modal";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
@@ -55,6 +56,16 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
   const canAttachFiles = modelMetadata?.capabilities.files ?? false;
   const attachmentSupportMessage = `${modelName} does not support file attachments. Choose a vision/file-capable model such as Claude, Gemini, or OpenAI.`;
 
+  useEffect(() => {
+    const handlePlaceholder = (event: Event) => {
+      const label = (event as CustomEvent<string>).detail;
+      setToastError(`${label} workspace is ready for the next implementation phase.`);
+      window.setTimeout(() => setToastError(null), 2600);
+    };
+    window.addEventListener("workspace-placeholder", handlePlaceholder);
+    return () => window.removeEventListener("workspace-placeholder", handlePlaceholder);
+  }, []);
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>, files: File[]) => {
     if (!getApiKey(selectedModel)) {
       event.preventDefault();
@@ -73,13 +84,15 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
           <Menu className="h-6 w-6" />
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <div className="flex items-center gap-2 rounded-full border border-border-main/60 bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm">
+          <div className="flex items-center gap-2 rounded-xl border border-border-main/60 bg-surface px-3 py-2 text-sm font-semibold text-text-main shadow-sm">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cream-highlight text-accent"><Sparkles className="h-3.5 w-3.5" /></span>
             <span className="hidden sm:inline">Susan AI</span>
           </div>
+          <div className="hidden items-center gap-1.5 text-xs text-text-muted lg:flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Private workspace</div>
           {conversationTitle && <span className="ml-2 hidden max-w-[260px] truncate text-sm text-text-muted md:inline">{conversationTitle}</span>}
         </div>
         <div className="flex items-center gap-2">
+          <nav className="hidden items-center gap-1 xl:flex" aria-label="Workspace navigation"><HeaderLink label="Projects" /><HeaderLink label="Knowledge" /><HeaderLink label="Tools" /></nav>
           <div role="group" aria-label="Workspace mode" className="flex items-center rounded-full border border-border-main/60 bg-surface p-1 shadow-sm">
             <ModeButton mode="chat" activeMode={mode} onSelect={onModeChange} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" />
             <ModeButton mode="agent" activeMode={mode} onSelect={onModeChange} icon={<Bot className="h-3.5 w-3.5" />} label="Agent" />
@@ -98,6 +111,7 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
           {mode === "agent" && activeAgentTask?.status === "awaiting_approval" && activeAgentTask.steps.find((step) => step.status === "awaiting_approval") && <ApprovalModal task={activeAgentTask} step={activeAgentTask.steps.find((step) => step.status === "awaiting_approval")!} onApprove={onApproveAgentStep} onReject={onRejectAgentStep} />}
           {mode === "agent" && <AgentTaskComposer activeTask={activeAgentTask} execution={agentExecution} onCreateTask={onCreateAgentTask} onRunTask={onRunAgentTask} onRollbackTask={onRollbackAgentTask} onPauseTask={onPauseAgentTask} onResumeTask={onResumeAgentTask} onRetryTask={onRetryAgentTask} onCancelTask={onCancelAgentTask} onClearTask={onClearAgentTask} />}
           {mode === "agent" && activeAgentTask && <InlineAgentTaskCard task={activeAgentTask} execution={agentExecution} />}
+          {mode === "agent" && activeAgentTask && <AgentOutputWorkspace task={activeAgentTask} execution={agentExecution} />}
           <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} hideWelcome={mode === "agent" && Boolean(activeAgentTask)} />
           {mode === "chat" && <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={modelName} />}
         </main>
@@ -105,6 +119,10 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
       </div>
     </div>
   );
+}
+
+function HeaderLink({ label }: { label: string }) {
+  return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-text-muted hover:bg-black/5 hover:text-text-main">{label}</button>;
 }
 
 function ModeButton({ mode, activeMode, onSelect, icon, label }: { mode: AgentMode; activeMode: AgentMode; onSelect: (mode: AgentMode) => void; icon: React.ReactNode; label: string }) {
