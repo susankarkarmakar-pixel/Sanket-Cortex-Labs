@@ -9,6 +9,7 @@ import { AgentExecutionOutcome } from "@/lib/agent/executor";
 import { AgentTaskComposer } from "@/components/agent/agent-task-composer";
 import { AgentSidePanel } from "@/components/agent/agent-side-panel";
 import { InlineAgentTaskCard } from "@/components/agent/inline-agent-task-card";
+import { ApprovalModal } from "@/components/agent/approval-modal";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
 import { getApiKey } from "@/lib/key-storage";
@@ -23,6 +24,8 @@ interface ChatAreaProps {
   executionEvents: ExecutionEvent[];
   onCreateAgentTask: (goal: string, attachments: AgentAttachment[]) => void | Promise<void>;
   onRunAgentTask: () => void | Promise<void>;
+  onApproveAgentStep: () => void;
+  onRejectAgentStep: () => void;
   onRollbackAgentTask: () => void;
   onPauseAgentTask: () => void;
   onResumeAgentTask: () => void;
@@ -44,7 +47,7 @@ interface ChatAreaProps {
   onPrompt: (prompt: string) => void;
 }
 
-export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
+export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onApproveAgentStep, onRejectAgentStep, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
   const customProvider = getCustomProviders().find((provider) => provider.id === selectedModel);
   const modelMetadata = MODELS_METADATA[selectedModel as keyof typeof MODELS_METADATA];
@@ -92,6 +95,7 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           {toastError && <div role="alert" className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">{toastError}</div>}
           {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
+          {mode === "agent" && activeAgentTask?.status === "awaiting_approval" && activeAgentTask.steps.find((step) => step.status === "awaiting_approval") && <ApprovalModal task={activeAgentTask} step={activeAgentTask.steps.find((step) => step.status === "awaiting_approval")!} onApprove={onApproveAgentStep} onReject={onRejectAgentStep} />}
           {mode === "agent" && <AgentTaskComposer activeTask={activeAgentTask} execution={agentExecution} onCreateTask={onCreateAgentTask} onRunTask={onRunAgentTask} onRollbackTask={onRollbackAgentTask} onPauseTask={onPauseAgentTask} onResumeTask={onResumeAgentTask} onRetryTask={onRetryAgentTask} onCancelTask={onCancelAgentTask} onClearTask={onClearAgentTask} />}
           {mode === "agent" && activeAgentTask && <InlineAgentTaskCard task={activeAgentTask} execution={agentExecution} />}
           <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} hideWelcome={mode === "agent" && Boolean(activeAgentTask)} />

@@ -78,7 +78,7 @@ export interface ExecutionEvent {
   id: string;
   taskId: string;
   stepId?: string;
-  type: "task-created" | "plan-created" | "approval-requested" | "tool-started" | "tool-completed" | "tool-failed" | "task-completed" | "task-failed" | "task-cancelled" | "task-paused" | "task-resumed" | "task-retried" | "task-rolled-back";
+  type: "task-created" | "plan-created" | "approval-requested" | "approval-granted" | "approval-rejected" | "tool-started" | "tool-completed" | "tool-failed" | "task-completed" | "task-failed" | "task-cancelled" | "task-paused" | "task-resumed" | "task-retried" | "task-rolled-back";
   message: string;
   toolId?: string;
   timestamp: string;

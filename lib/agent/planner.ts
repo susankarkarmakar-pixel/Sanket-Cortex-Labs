@@ -8,6 +8,7 @@ export function planAgentTask(task: AgentTask, now = new Date().toISOString()): 
 
 export function createPlanSteps(goal: string): AgentPlanStep[] {
   const normalized = goal.toLowerCase();
+  const needsApproval = /(report|export|publish|send|share|generate)/i.test(normalized);
   const stepTitles = normalized.includes("calculat") || /[0-9]\s*[+\-*/]/.test(goal)
     ? [
         ["Understand the calculation", "Validate the requested arithmetic expression."],
@@ -39,6 +40,6 @@ export function createPlanSteps(goal: string): AgentPlanStep[] {
     description,
     ...(toolId ? { toolId } : {}),
     status: "pending",
-    requiresApproval: false,
+    requiresApproval: needsApproval && /prepare|present|return|share|publish|export/i.test(title),
   }));
 }

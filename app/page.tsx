@@ -104,13 +104,27 @@ export default function Home() {
       createExecutionEvent(task.id, "plan-created", `Plan created with ${task.steps.length} steps`),
     ]);
   };
-  const handleRunAgentTask = async () => {
-    if (!activeAgentTask) return;
-    let currentTask = activeAgentTask;
+  const handleRunAgentTask = async (startingTask?: AgentTask) => {
+    const taskToRun = startingTask || activeAgentTask;
+    if (!taskToRun) return;
+    let currentTask = taskToRun;
     if (!safeTaskSnapshot.current || safeTaskSnapshot.current.id !== currentTask.id) safeTaskSnapshot.current = structuredClone(currentTask);
     while (true) {
-      const step = currentTask.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
-      if (!step?.toolId) break;
+      const step = currentTask.steps.find((candidate) => candidate.status === "pending" && (candidate.toolId || candidate.requiresApproval));
+      if (!step) break;
+      if (step.requiresApproval) {
+        const awaitingTask = updateStepStatus(transitionTask(currentTask, "awaiting_approval"), step.id, "awaiting_approval");
+        setActiveAgentTask(awaitingTask);
+        setAgentExecution({ message: `Approval required before: ${step.title}`, ok: true });
+        setExecutionEvents((events) => [...events, createExecutionEvent(currentTask.id, "approval-requested", `Approval required before ${step.title}`, step.id, step.toolId)]);
+        break;
+      }
+      if (!step.toolId) {
+        currentTask = updateStepStatus(currentTask, step.id, "completed");
+        setActiveAgentTask(currentTask);
+        setExecutionEvents((events) => [...events, createExecutionEvent(currentTask.id, "tool-completed", `Completed ${step.title}`, step.id)]);
+        continue;
+      }
       setExecutionEvents((events) => [...events, createExecutionEvent(currentTask.id, "tool-started", `Started ${step.title}`, step.id, step.toolId)]);
       const outcome = await executeFirstToolStep(currentTask);
       currentTask = outcome.task;
@@ -126,6 +140,26 @@ export default function Home() {
       });
       if (!outcome.ok || !hasNextTool) break;
     }
+  };
+  const handleApproveAgentStep = () => {
+    if (!activeAgentTask || activeAgentTask.status !== "awaiting_approval") return;
+    const approvalStep = activeAgentTask.steps.find((step) => step.status === "awaiting_approval");
+    if (!approvalStep) return;
+    const pendingTask = updateStepStatus(transitionTask(activeAgentTask, "running"), approvalStep.id, "pending");
+    const task = { ...pendingTask, steps: pendingTask.steps.map((step) => step.id === approvalStep.id ? { ...step, requiresApproval: false } : step) };
+    setActiveAgentTask(task);
+    setAgentExecution({ message: "Approval granted. Continuing the task automatically.", ok: true });
+    setExecutionEvents((events) => [...events, createExecutionEvent(task.id, "approval-granted", `Approved ${approvalStep.title}`, approvalStep.id, approvalStep.toolId)]);
+    void handleRunAgentTask(task);
+  };
+  const handleRejectAgentStep = () => {
+    if (!activeAgentTask || activeAgentTask.status !== "awaiting_approval") return;
+    const approvalStep = activeAgentTask.steps.find((step) => step.status === "awaiting_approval");
+    if (!approvalStep) return;
+    const task = transitionTask(updateStepStatus(activeAgentTask, approvalStep.id, "skipped"), "cancelled");
+    setActiveAgentTask(task);
+    setAgentExecution({ message: "Approval rejected. Task cancelled without executing the protected step.", ok: false });
+    setExecutionEvents((events) => [...events, createExecutionEvent(task.id, "approval-rejected", `Rejected ${approvalStep.title}`, approvalStep.id, approvalStep.toolId), createExecutionEvent(task.id, "task-cancelled", "Task cancelled after approval rejection")]);
   };
   const handleRollbackAgentTask = () => {
     if (!activeAgentTask || activeAgentTask.status !== "failed" || !safeTaskSnapshot.current) return;
@@ -191,7 +225,7 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
-      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onRollbackAgentTask={handleRollbackAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
+      <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onApproveAgentStep={handleApproveAgentStep} onRejectAgentStep={handleRejectAgentStep} onRollbackAgentTask={handleRollbackAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>

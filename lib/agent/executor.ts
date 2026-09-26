@@ -54,9 +54,9 @@ function failure(task: AgentTask, code: AgentError["code"], message: string, ret
 }
 
 function finalizeAfterTool(task: AgentTask): AgentTask {
-  const steps = task.steps.map((step) => step.status === "pending" && !step.toolId ? { ...step, status: "completed" as const } : step);
-  const hasPendingTool = steps.some((step) => step.status === "pending" && Boolean(step.toolId));
-  return { ...task, steps, status: hasPendingTool ? "running" : "completed", updatedAt: new Date().toISOString() };
+  const steps = task.steps.map((step) => step.status === "pending" && !step.toolId && !step.requiresApproval ? { ...step, status: "completed" as const } : step);
+  const hasPendingAction = steps.some((step) => step.status === "pending" && (Boolean(step.toolId) || step.requiresApproval));
+  return { ...task, steps, status: hasPendingAction ? "running" : "completed", updatedAt: new Date().toISOString() };
 }
 
 function formatFileOutput(result: FileAnalysisOutput): string {
