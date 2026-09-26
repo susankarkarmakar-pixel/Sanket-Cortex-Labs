@@ -4,7 +4,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LanguageModel } from "ai";
 import { CustomProvider } from "@/lib/custom-providers";
 
-export type ModelProvider = "deepseek" | "anthropic" | "huggingface" | "google" | "openai" | "qwen" | "kimi" | "manus" | "sarvam" | "openrouter";
+export type ModelProvider = "deepseek" | "anthropic" | "huggingface" | "google" | "openai" | "qwen" | "kimi" | "manus" | "jules" | "sarvam" | "openrouter";
 
 export type ProviderTransport = "openai-compatible" | "anthropic" | "google" | "async";
 
@@ -41,6 +41,7 @@ export const MODELS_METADATA: Record<ModelProvider, ProviderMetadata> = {
   qwen: { name: "Qwen Max", description: "Alibaba Cloud model", color: "text-purple-400", icon: "Q", model: "qwen-max", tier: "paid-or-trial", setupUrl: "https://bailian.console.aliyun.com/", transport: "openai-compatible", baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", chatAvailable: true, capabilities: { text: true, vision: false, files: false, streaming: true, tools: false, reasoning: true, async: false } },
   kimi: { name: "Kimi", description: "Long-context Moonshot model", color: "text-red-400", icon: "K", model: "moonshot-v1-8k", tier: "paid-or-trial", setupUrl: "https://platform.moonshot.cn/console/api-keys", transport: "openai-compatible", baseURL: "https://api.moonshot.cn/v1", chatAvailable: true, capabilities: { text: true, vision: false, files: false, streaming: true, tools: false, reasoning: false, async: false } },
   manus: { name: "Manus", description: "Async agent tasks; not instant chat", color: "text-indigo-400", icon: "M", model: "manus-1.6", tier: "async", setupUrl: "https://manus.im/app/developers", transport: "async", chatAvailable: false, capabilities: { text: false, vision: false, files: true, streaming: false, tools: true, reasoning: true, async: true } },
+  jules: { name: "Google Jules", description: "Google's asynchronous coding agent", color: "text-blue-600", icon: "J", model: "jules", tier: "async", setupUrl: "https://jules.google.com/settings", transport: "async", chatAvailable: false, capabilities: { text: false, vision: false, files: true, streaming: false, tools: true, reasoning: true, async: true } },
   sarvam: { name: "Sarvam 105B", description: "Indian-language chat model", color: "text-teal-400", icon: "S", model: "sarvam-105b-conversations", tier: "paid-or-trial", setupUrl: "https://dashboard.sarvam.ai/", transport: "openai-compatible", baseURL: "https://api.sarvam.ai/v1", chatAvailable: true, capabilities: { text: true, vision: false, files: false, streaming: true, tools: false, reasoning: false, async: false } },
   openrouter: { name: "OpenRouter Free Router", description: "Automatically routes to available free models", color: "text-violet-500", icon: "R", model: "openrouter/free", tier: "free-tier", setupUrl: "https://openrouter.ai/settings/keys", transport: "openai-compatible", baseURL: "https://openrouter.ai/api/v1", chatAvailable: true, capabilities: { text: true, vision: false, files: false, streaming: true, tools: false, reasoning: true, async: false } },
 };

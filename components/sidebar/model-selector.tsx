@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Shield, type LucideIcon } from "lucide-react";
+import { ChevronDown, Bot, Sparkles, BrainCircuit, Globe, Cpu, Hexagon, Zap, Shield, Code2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INSTANT_CHAT_PROVIDERS, MODELS_METADATA, ModelProvider } from "@/lib/ai-providers";
 import { getApiKey, getKeys, ApiKeys } from "@/lib/key-storage";
@@ -26,6 +26,7 @@ const MODEL_ICONS: Record<Exclude<ModelProvider, "manus">, LucideIcon> = {
   kimi: Zap,
   sarvam: Shield,
   openrouter: Globe,
+  jules: Code2,
 };
 
 const MODELS = INSTANT_CHAT_PROVIDERS.map((id) => ({
@@ -34,6 +35,7 @@ const MODELS = INSTANT_CHAT_PROVIDERS.map((id) => ({
   description: MODELS_METADATA[id].description,
   icon: MODEL_ICONS[id],
 }));
+const AGENT_MODELS = [{ id: "jules", name: MODELS_METADATA.jules.name, description: MODELS_METADATA.jules.description, icon: MODEL_ICONS.jules }];
 
 export function ModelSelector({ selected, onSelect, collapsed = false }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +56,7 @@ export function ModelSelector({ selected, onSelect, collapsed = false }: ModelSe
     return () => { window.removeEventListener('keys-updated', handleKeysUpdated); window.removeEventListener('custom-providers-updated', handleCustomProvidersUpdated); };
   }, []);
 
-  const availableModels = [...MODELS, ...customProviders.map((provider) => ({ id: provider.id, name: provider.name, description: provider.model, icon: Globe }))];
+  const availableModels = [...MODELS, ...AGENT_MODELS, ...customProviders.map((provider) => ({ id: provider.id, name: provider.name, description: provider.model, icon: Globe }))];
   const selectedModel = availableModels.find(m => m.id === selected) || availableModels[0];
   const Icon = selectedModel.icon;
   const selectedIndex = Math.max(0, availableModels.findIndex((model) => model.id === selected));

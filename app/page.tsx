@@ -46,13 +46,14 @@ export default function Home() {
     if (getApiKey(selectedModel, keys)) return;
     const preferred = getApiKey("google", keys)
       ? "google"
-      : ["openai", "anthropic", "deepseek", "qwen", "kimi", "sarvam", "openrouter", "huggingface"].find((provider) => getApiKey(provider, keys));
+      : ["openai", "anthropic", "deepseek", "qwen", "kimi", "sarvam", "openrouter", "huggingface", "jules"].find((provider) => getApiKey(provider, keys));
     if (preferred && preferred !== selectedModel) {
       // This effect synchronizes the selected model with externally stored BYOK keys.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedModel(preferred);
+      if (preferred === "jules") setMode("agent");
     }
-  }, [keyVersion, keys, selectedModel]);
+  }, [keyVersion, keys, selectedModel, setMode]);
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/chat",
@@ -240,7 +241,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-blue">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} collapsed={isSidebarCollapsed} onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)} selectedModel={selectedModel} onSelectModel={setSelectedModel} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} collapsed={isSidebarCollapsed} onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)} selectedModel={selectedModel} onSelectModel={(model) => { setSelectedModel(model); if (model === "jules") setMode("agent"); else if (selectedModel === "jules") setMode("chat"); }} onNewChat={startNewConversation} onLoadConversation={handleLoadConversation} currentConversationId={currentConversationId} onOpenAbout={() => { setIsSettingsOpen(false); setIsAboutOpen(true); }} />
       <ChatArea mode={mode} onModeChange={setMode} activeAgentTask={activeAgentTask} agentExecution={agentExecution} executionEvents={executionEvents} onCreateAgentTask={handleCreateAgentTask} onRunAgentTask={handleRunAgentTask} onApproveAgentStep={handleApproveAgentStep} onRejectAgentStep={handleRejectAgentStep} onRollbackAgentTask={handleRollbackAgentTask} onPauseAgentTask={handlePauseAgentTask} onResumeAgentTask={handleResumeAgentTask} onRetryAgentTask={handleRetryAgentTask} onCancelAgentTask={handleCancelAgentTask} onClearAgentTask={handleClearAgentTask} onOpenSidebar={() => setIsSidebarOpen(true)} selectedModel={selectedModel} messages={displayMessages} input={input} onInputChange={(event) => setInput(event.target.value)} onSend={handleSend} isLoading={isLoading} stop={stop} error={error} onRetry={regenerate} conversationTitle={conversationTitle} onPrompt={setInput} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
