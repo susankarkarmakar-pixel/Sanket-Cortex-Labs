@@ -63,6 +63,7 @@ function formatFileOutput(result: FileAnalysisOutput): string {
   const summary = [`File: ${result.filename}`, `Characters: ${result.characterCount ?? "n/a"}`, `Lines: ${result.lineCount ?? "n/a"}`];
   if (typeof result.paragraphCount === "number") summary.push(`Paragraphs: ${result.paragraphCount}`);
   if (typeof result.tableCount === "number") summary.push(`DOCX tables: ${result.tableCount}`);
+  if (result.ocrUsed) summary.push(`OCR: ${result.ocrPageCount || 0} page${result.ocrPageCount === 1 ? "" : "s"}`);
   if (typeof result.sheetCount === "number") summary.push(`Sheets: ${result.sheetCount}${result.sheetNames?.length ? ` (${result.sheetNames.join(", ")})` : ""}`);
   if (result.sheetTables?.length) summary.push(`Sheet previews: ${result.sheetTables.map((sheet) => `${sheet.name} (${sheet.table.rowCount} rows)`).join(", ")}`);
   if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`);

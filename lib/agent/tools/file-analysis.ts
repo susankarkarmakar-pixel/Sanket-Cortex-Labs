@@ -2,19 +2,21 @@ import { ToolDefinition } from "@/lib/agent/types";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import mammoth from "mammoth";
 import ExcelJS from "exceljs";
+import { createWorker } from "tesseract.js";
 
 interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: string; }
 export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
 export interface ChartPoint { label: string; value: number; }
 export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
 export interface SheetTableSummary { name: string; table: CsvTableSummary; preview: string; }
-export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; tableCount?: number; sheetCount?: number; sheetNames?: string[]; sheetTables?: SheetTableSummary[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
+export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; tableCount?: number; ocrUsed?: boolean; ocrPageCount?: number; sheetCount?: number; sheetNames?: string[]; sheetTables?: SheetTableSummary[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
 const MAX_PREVIEW_LENGTH = 12_000;
 const MAX_PDF_PAGES = 50;
 const MAX_XLSX_SHEETS = 20;
 const MAX_XLSX_ROWS_PER_SHEET = 500;
+const MAX_OCR_PAGES = 5;
 const TEXT_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json"]);
 const DOCUMENT_TYPES = new Map([
   ["application/pdf", "PDF"],
@@ -62,8 +64,48 @@ async function analyzePdf(input: FileAnalysisInput, signal: AbortSignal): Promis
     const text = content.items.map((item) => "str" in item ? item.str : "").join(" ").trim();
     if (text) pageText.push(`Page ${pageNumber}\n${text}`);
   }
-  const extractedText = pageText.join("\n\n");
-  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: bytes.byteLength, pageCount, characterCount: extractedText.length, lineCount: extractedText.length === 0 ? 0 : extractedText.split(/\r?\n/).length, preview: extractedText.slice(0, MAX_PREVIEW_LENGTH), note: pageCount > MAX_PDF_PAGES ? `Extracted the first ${MAX_PDF_PAGES} of ${pageCount} pages to keep analysis bounded.` : extractedText ? "PDF text extracted successfully." : "This PDF has no readable text layer; OCR is required for scanned pages." };
+  let extractedText = pageText.join("\n\n");
+  let ocrUsed = false;
+  let ocrPageCount = 0;
+  let note = pageCount > MAX_PDF_PAGES ? `Extracted the first ${MAX_PDF_PAGES} of ${pageCount} pages to keep analysis bounded.` : "";
+  if (!extractedText.trim()) {
+    const ocr = await runPdfOcr(document, Math.min(pagesToRead, MAX_OCR_PAGES), signal);
+    extractedText = ocr.text;
+    ocrUsed = ocr.used;
+    ocrPageCount = ocr.pageCount;
+    note = ocr.used ? `OCR extracted text from ${ocr.pageCount} scanned page${ocr.pageCount === 1 ? "" : "s"}.` : "This PDF has no readable text layer; OCR is available in a browser environment for scanned pages.";
+  }
+  const table = parseDelimitedTable(extractedText);
+  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: bytes.byteLength, pageCount, ocrUsed, ocrPageCount, characterCount: extractedText.length, lineCount: extractedText.length === 0 ? 0 : extractedText.split(/\r?\n/).length, preview: extractedText.slice(0, MAX_PREVIEW_LENGTH), table, note: note || (extractedText ? "PDF text extracted successfully." : "This PDF has no readable text layer.") };
+}
+
+async function runPdfOcr(document: { getPage: (pageNumber: number) => Promise<unknown> }, pages: number, signal: AbortSignal): Promise<{ text: string; used: boolean; pageCount: number }> {
+  if (typeof document === "undefined" || typeof window === "undefined" || pages === 0) return { text: "", used: false, pageCount: 0 };
+  const worker = await createWorker("eng");
+  const text: string[] = [];
+  try {
+    for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
+      if (signal.aborted) throw new Error("File analysis was cancelled.");
+      const page = await document.getPage(pageNumber) as { getViewport: (options: { scale: number }) => { width: number; height: number }; render: (options: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<void> } };
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = window.document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext("2d");
+      if (!context) continue;
+      await page.render({ canvasContext: context, viewport }).promise;
+      const result = await worker.recognize(canvas);
+      if (result.data.text.trim()) text.push(`Page ${pageNumber}\n${result.data.text.trim()}`);
+    }
+  } finally {
+    await worker.terminate();
+  }
+  return { text: text.join("\n\n"), used: true, pageCount: pages };
+}
+
+function parseDelimitedTable(text: string): CsvTableSummary | undefined {
+  const records = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => line.includes("|") ? line.split("|").map((cell) => cell.trim()) : line.split(/\s{2,}/).map((cell) => cell.trim())).filter((row) => row.length >= 2);
+  return records.length >= 2 ? summarizeTable(records) : undefined;
 }
 
 async function analyzeDocx(input: FileAnalysisInput, signal: AbortSignal): Promise<FileAnalysisOutput> {
