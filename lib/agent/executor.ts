@@ -18,7 +18,7 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
     const attachment = task.attachments[0];
     if (!attachment) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
-      return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: "File Analysis needs an attached TXT, Markdown, CSV, or JSON file." };
+      return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: "File Analysis needs an attached TXT, Markdown, CSV, JSON, PDF, DOCX, or XLSX file." };
     }
     if (!attachment.dataUrl) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
@@ -57,6 +57,8 @@ function finalizeAfterTool(task: AgentTask): AgentTask {
 
 function formatFileOutput(result: FileAnalysisOutput): string {
   const summary = [`File: ${result.filename}`, `Characters: ${result.characterCount ?? "n/a"}`, `Lines: ${result.lineCount ?? "n/a"}`];
+  if (typeof result.paragraphCount === "number") summary.push(`Paragraphs: ${result.paragraphCount}`);
+  if (typeof result.sheetCount === "number") summary.push(`Sheets: ${result.sheetCount}${result.sheetNames?.length ? ` (${result.sheetNames.join(", ")})` : ""}`);
   if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`);
   if (result.table?.numericStats.length) summary.push(`Numeric columns: ${result.table.numericStats.map((stat) => `${stat.column} avg=${stat.average.toFixed(2)}`).join(", ")}`);
   if (typeof result.jsonValid === "boolean") summary.push(`JSON valid: ${result.jsonValid ? "yes" : "no"}`);

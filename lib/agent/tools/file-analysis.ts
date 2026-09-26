@@ -1,11 +1,13 @@
 import { ToolDefinition } from "@/lib/agent/types";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import mammoth from "mammoth";
+import ExcelJS from "exceljs";
 
 interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: string; }
 export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
 export interface ChartPoint { label: string; value: number; }
 export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
-export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
+export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; sheetCount?: number; sheetNames?: string[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
 const MAX_PREVIEW_LENGTH = 12_000;
@@ -20,16 +22,18 @@ const DOCUMENT_TYPES = new Map([
 export const fileAnalysisTool: ToolDefinition<FileAnalysisInput, FileAnalysisOutput> = {
   id: "file-analysis",
   name: "File Analysis",
-  description: "Inspect text files, extract bounded PDF text, and identify DOCX/XLSX attachments with safe metadata.",
+  description: "Inspect text files, extract bounded PDF/DOCX text, and analyze XLSX sheets with a preview table.",
   permission: "read-only",
   inputSchema: { type: "object", properties: { filename: { type: "string", maxLength: 255 }, mediaType: { type: "string", maxLength: 100 }, dataUrl: { type: "string", maxLength: MAX_DATA_URL_LENGTH } }, required: ["filename", "mediaType", "dataUrl"], additionalProperties: false },
   async execute(input, context) {
     if (context.signal.aborted) throw new Error("File analysis was cancelled.");
     validateInput(input);
     if (input.mediaType === "application/pdf") return analyzePdf(input, context.signal);
+    if (input.mediaType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return analyzeDocx(input, context.signal);
+    if (input.mediaType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") return analyzeXlsx(input, context.signal);
     if (!TEXT_TYPES.has(input.mediaType)) {
       const documentType = DOCUMENT_TYPES.get(input.mediaType);
-      return { filename: input.filename, mediaType: input.mediaType, sizeBytes: estimateDataSize(input.dataUrl), note: documentType ? `${documentType} file detected. Binary text/table extraction will be connected in the next document-analysis phase.` : "This read-only analyzer supports TXT, Markdown, CSV, JSON, PDF, DOCX, and XLSX metadata." };
+      return { filename: input.filename, mediaType: input.mediaType, sizeBytes: estimateDataSize(input.dataUrl), note: documentType ? `${documentType} file detected, but no extraction adapter is registered for this media type.` : "This read-only analyzer supports TXT, Markdown, CSV, JSON, PDF, DOCX, and XLSX." };
     }
 
     const text = decodeDataUrl(input.dataUrl);
@@ -59,13 +63,51 @@ async function analyzePdf(input: FileAnalysisInput, signal: AbortSignal): Promis
   return { filename: input.filename, mediaType: input.mediaType, sizeBytes: bytes.byteLength, pageCount, characterCount: extractedText.length, lineCount: extractedText.length === 0 ? 0 : extractedText.split(/\r?\n/).length, preview: extractedText.slice(0, MAX_PREVIEW_LENGTH), note: pageCount > MAX_PDF_PAGES ? `Extracted the first ${MAX_PDF_PAGES} of ${pageCount} pages to keep analysis bounded.` : extractedText ? "PDF text extracted successfully." : "This PDF has no readable text layer; OCR is required for scanned pages." };
 }
 
+async function analyzeDocx(input: FileAnalysisInput, signal: AbortSignal): Promise<FileAnalysisOutput> {
+  if (signal.aborted) throw new Error("File analysis was cancelled.");
+  const arrayBuffer = toArrayBuffer(decodeDataUrlBytes(input.dataUrl));
+  const rawText = (await mammoth.extractRawText({ arrayBuffer })).value.trim();
+  if (signal.aborted) throw new Error("File analysis was cancelled.");
+  const html = (await mammoth.convertToHtml({ arrayBuffer })).value;
+  const paragraphCount = rawText ? rawText.split(/\r?\n/).filter(Boolean).length : 0;
+  const tableCount = (html.match(/<table\b/gi) || []).length;
+  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: arrayBuffer.byteLength, characterCount: rawText.length, lineCount: rawText ? rawText.split(/\r?\n/).length : 0, paragraphCount, preview: rawText.slice(0, MAX_PREVIEW_LENGTH), note: rawText ? `DOCX text extracted successfully${tableCount ? `; detected ${tableCount} table${tableCount === 1 ? "" : "s"}.` : "."}` : "This DOCX does not contain readable paragraph text." };
+}
+
+async function analyzeXlsx(input: FileAnalysisInput, signal: AbortSignal): Promise<FileAnalysisOutput> {
+  if (signal.aborted) throw new Error("File analysis was cancelled.");
+  const bytes = decodeDataUrlBytes(input.dataUrl);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(toArrayBuffer(bytes));
+  const sheetNames = workbook.worksheets.map((sheet) => sheet.name);
+  const firstSheet = sheetNames[0];
+  const matrix: string[][] = [];
+  if (firstSheet) workbook.worksheets[0].eachRow({ includeEmpty: true }, (row) => {
+    const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+    matrix.push(values.map((value) => value instanceof Date ? value.toISOString() : String(value ?? "")));
+  });
+  if (signal.aborted) throw new Error("File analysis was cancelled.");
+  const records = matrix.map((row) => row.map((cell) => String(cell ?? "")));
+  const table = summarizeTable(records);
+  const preview = records.slice(0, 9).map((row) => row.join(" | ")).join("\n");
+  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: bytes.byteLength, sheetCount: sheetNames.length, sheetNames, characterCount: preview.length, lineCount: preview ? preview.split(/\r?\n/).length : 0, preview, table, note: firstSheet ? `XLSX extracted successfully from sheet “${firstSheet}”.${sheetNames.length > 1 ? ` ${sheetNames.length - 1} additional sheet${sheetNames.length === 2 ? "" : "s"} detected.` : ""}` : "This XLSX workbook has no sheets." };
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
 function validateInput(input: FileAnalysisInput): void { if (!input || typeof input.filename !== "string" || input.filename.length === 0 || input.filename.length > 255) throw new Error("A valid filename is required."); if (typeof input.mediaType !== "string" || input.mediaType.length > 100) throw new Error("A valid media type is required."); if (typeof input.dataUrl !== "string" || input.dataUrl.length === 0 || input.dataUrl.length > MAX_DATA_URL_LENGTH) throw new Error("The file data is missing or too large."); if (!input.dataUrl.startsWith("data:")) throw new Error("File analysis accepts data URLs only."); }
 function decodeDataUrl(dataUrl: string): string { return new TextDecoder().decode(decodeDataUrlBytes(dataUrl)); }
 function decodeDataUrlBytes(dataUrl: string): Uint8Array { const commaIndex = dataUrl.indexOf(","); if (commaIndex < 0) throw new Error("The file data URL is malformed."); const metadata = dataUrl.slice(0, commaIndex); const payload = dataUrl.slice(commaIndex + 1); if (metadata.endsWith(";base64")) { const binary = atob(payload); return Uint8Array.from(binary, (character) => character.charCodeAt(0)); } return new TextEncoder().encode(decodeURIComponent(payload)); }
 function estimateDataSize(dataUrl: string): number { return decodeDataUrlBytes(dataUrl).byteLength; }
 
 function parseCsv(text: string): CsvTableSummary {
-  const records = parseCsvRecords(text).filter((record) => record.some((cell) => cell.trim() !== ""));
+  return summarizeTable(parseCsvRecords(text));
+}
+
+function summarizeTable(inputRecords: string[][]): CsvTableSummary {
+  const records = inputRecords.filter((record) => record.some((cell) => cell.trim() !== ""));
   const columns = (records.shift() || []).map((column, index) => column.trim() || `Column ${index + 1}`);
   const rows = records.slice(0, 8).map((record) => columns.map((_, index) => record[index]?.trim() || ""));
   const missingValueCount = records.reduce((count, record) => count + columns.filter((_, index) => !record[index]?.trim()).length, 0);
