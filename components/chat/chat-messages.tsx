@@ -16,9 +16,10 @@ interface ChatMessagesProps {
   isStreaming?: boolean;
   onRetry?: () => void;
   onPrompt?: (prompt: string) => void;
+  hideWelcome?: boolean;
 }
 
-export function ChatMessages({ messages, isStreaming, onRetry, onPrompt }: ChatMessagesProps) {
+export function ChatMessages({ messages, isStreaming, onRetry, onPrompt, hideWelcome }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive or while streaming
@@ -27,6 +28,10 @@ export function ChatMessages({ messages, isStreaming, onRetry, onPrompt }: ChatM
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isStreaming]);
+
+  if (messages.length === 0 && hideWelcome) {
+    return <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 custom-scrollbar" />;
+  }
 
   if (messages.length === 0) {
     return (

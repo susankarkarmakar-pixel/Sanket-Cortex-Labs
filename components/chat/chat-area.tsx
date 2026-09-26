@@ -8,6 +8,7 @@ import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
 import { AgentExecutionOutcome } from "@/lib/agent/executor";
 import { AgentTaskComposer } from "@/components/agent/agent-task-composer";
 import { AgentSidePanel } from "@/components/agent/agent-side-panel";
+import { InlineAgentTaskCard } from "@/components/agent/inline-agent-task-card";
 import { ChatMessages } from "./chat-messages";
 import { MessageInput } from "./message-input";
 import { getApiKey } from "@/lib/key-storage";
@@ -92,7 +93,8 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
           {toastError && <div role="alert" className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">{toastError}</div>}
           {error && !toastError && <ErrorRecovery error={error} onRetry={onRetry} onOpenSettings={() => document.dispatchEvent(new CustomEvent("open-settings"))} onOpenModels={onOpenSidebar} />}
           {mode === "agent" && <AgentTaskComposer activeTask={activeAgentTask} execution={agentExecution} onCreateTask={onCreateAgentTask} onRunTask={onRunAgentTask} onRollbackTask={onRollbackAgentTask} onPauseTask={onPauseAgentTask} onResumeTask={onResumeAgentTask} onRetryTask={onRetryAgentTask} onCancelTask={onCancelAgentTask} onClearTask={onClearAgentTask} />}
-          <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} />
+          {mode === "agent" && activeAgentTask && <InlineAgentTaskCard task={activeAgentTask} execution={agentExecution} />}
+          <ChatMessages messages={messages} isStreaming={isLoading} onRetry={onRetry} onPrompt={onPrompt} hideWelcome={mode === "agent" && Boolean(activeAgentTask)} />
           {mode === "chat" && <MessageInput key={selectedModel} input={input} onInputChange={onInputChange} onSubmit={handleSubmit} isLoading={isLoading} stop={stop} canAttachFiles={canAttachFiles} attachmentSupportMessage={attachmentSupportMessage} modelName={modelName} />}
         </main>
         {mode === "agent" && <AgentSidePanel activeTask={activeAgentTask} execution={agentExecution} events={executionEvents} onRollback={onRollbackAgentTask} />}
