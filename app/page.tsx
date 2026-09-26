@@ -32,7 +32,7 @@ export default function Home() {
   const { settings } = useAppSettings();
   const { mode, setMode } = useAgentMode();
   const [activeAgentTask, setActiveAgentTask] = useState<AgentTask | null>(null);
-  const [agentExecution, setAgentExecution] = useState<Pick<AgentExecutionOutcome, "message" | "output" | "table" | "error" | "ok"> | null>(null);
+  const [agentExecution, setAgentExecution] = useState<Pick<AgentExecutionOutcome, "message" | "output" | "table" | "sheetTables" | "error" | "ok"> | null>(null);
   const [executionEvents, setExecutionEvents] = useState<ExecutionEvent[]>([]);
   const safeTaskSnapshot = useRef<AgentTask | null>(null);
   const { records, ready: tasksReady, save: saveAgentTask, remove: removeAgentTask } = useAgentTasks();
@@ -129,7 +129,7 @@ export default function Home() {
       const outcome = await executeFirstToolStep(currentTask);
       currentTask = outcome.task;
       setActiveAgentTask(outcome.task);
-      setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, error: outcome.error, ok: outcome.ok });
+      setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, sheetTables: outcome.sheetTables, error: outcome.error, ok: outcome.ok });
       if (outcome.ok) safeTaskSnapshot.current = structuredClone(outcome.task);
       const hasNextTool = outcome.task.steps.some((candidate) => candidate.status === "pending" && candidate.toolId);
       setExecutionEvents((events) => {

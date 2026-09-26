@@ -1,10 +1,10 @@
 import { calculatorTool } from "@/lib/agent/tools/calculator";
 import { fileAnalysisTool } from "@/lib/agent/tools/file-analysis";
-import { CsvTableSummary, FileAnalysisOutput } from "@/lib/agent/tools/file-analysis";
+import { CsvTableSummary, FileAnalysisOutput, SheetTableSummary } from "@/lib/agent/tools/file-analysis";
 import { AgentError, AgentTask, ToolExecutionContext } from "@/lib/agent/types";
 import { transitionTask, updateStepStatus } from "@/lib/agent/agent-state";
 
-export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; table?: CsvTableSummary; error?: AgentError; ok: boolean; }
+export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; table?: CsvTableSummary; sheetTables?: SheetTableSummary[]; error?: AgentError; ok: boolean; }
 
 export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecutionOutcome> {
   const step = task.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
@@ -27,7 +27,7 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
     try {
       const result = await fileAnalysisTool.execute({ filename: attachment.filename, mediaType: attachment.mediaType, dataUrl: attachment.dataUrl }, context);
       const completedTask = updateStepStatus(runningTask, step.id, "completed");
-      return { task: finalizeAfterTool(completedTask), ok: true, message: "File Analysis completed successfully.", output: formatFileOutput(result), table: result.table };
+      return { task: finalizeAfterTool(completedTask), ok: true, message: "File Analysis completed successfully.", output: formatFileOutput(result), table: result.table, sheetTables: result.sheetTables };
     } catch (error) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
       return failure({ ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, "FILE_ANALYSIS_FAILED", error instanceof Error ? error.message : "File Analysis could not complete.", true, "Check the file format and size, then retry the failed step.");
@@ -64,6 +64,7 @@ function formatFileOutput(result: FileAnalysisOutput): string {
   if (typeof result.paragraphCount === "number") summary.push(`Paragraphs: ${result.paragraphCount}`);
   if (typeof result.tableCount === "number") summary.push(`DOCX tables: ${result.tableCount}`);
   if (typeof result.sheetCount === "number") summary.push(`Sheets: ${result.sheetCount}${result.sheetNames?.length ? ` (${result.sheetNames.join(", ")})` : ""}`);
+  if (result.sheetTables?.length) summary.push(`Sheet previews: ${result.sheetTables.map((sheet) => `${sheet.name} (${sheet.table.rowCount} rows)`).join(", ")}`);
   if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`);
   if (result.table?.numericStats.length) summary.push(`Numeric columns: ${result.table.numericStats.map((stat) => `${stat.column} avg=${stat.average.toFixed(2)}`).join(", ")}`);
   if (typeof result.jsonValid === "boolean") summary.push(`JSON valid: ${result.jsonValid ? "yes" : "no"}`);

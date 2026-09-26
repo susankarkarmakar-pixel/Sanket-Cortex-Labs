@@ -7,11 +7,14 @@ interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: stri
 export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
 export interface ChartPoint { label: string; value: number; }
 export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
-export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; tableCount?: number; sheetCount?: number; sheetNames?: string[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
+export interface SheetTableSummary { name: string; table: CsvTableSummary; preview: string; }
+export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; tableCount?: number; sheetCount?: number; sheetNames?: string[]; sheetTables?: SheetTableSummary[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
 const MAX_PREVIEW_LENGTH = 12_000;
 const MAX_PDF_PAGES = 50;
+const MAX_XLSX_SHEETS = 20;
+const MAX_XLSX_ROWS_PER_SHEET = 500;
 const TEXT_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json"]);
 const DOCUMENT_TYPES = new Map([
   ["application/pdf", "PDF"],
@@ -97,16 +100,20 @@ async function analyzeXlsx(input: FileAnalysisInput, signal: AbortSignal): Promi
   await workbook.xlsx.load(toArrayBuffer(bytes));
   const sheetNames = workbook.worksheets.map((sheet) => sheet.name);
   const firstSheet = sheetNames[0];
-  const matrix: string[][] = [];
-  if (firstSheet) workbook.worksheets[0].eachRow({ includeEmpty: true }, (row) => {
-    const values = Array.isArray(row.values) ? row.values.slice(1) : [];
-    matrix.push(values.map((value) => value instanceof Date ? value.toISOString() : String(value ?? "")));
+  const sheetTables = workbook.worksheets.slice(0, MAX_XLSX_SHEETS).map((sheet) => {
+    const matrix: string[][] = [];
+    sheet.eachRow({ includeEmpty: true }, (row) => {
+      if (matrix.length >= MAX_XLSX_ROWS_PER_SHEET + 1) return;
+      const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+      matrix.push(values.map((value) => value instanceof Date ? value.toISOString() : String(value ?? "")));
+    });
+    const table = summarizeTable(matrix);
+    return { name: sheet.name, table, preview: matrix.slice(0, 9).map((row) => row.join(" | ")).join("\n") };
   });
   if (signal.aborted) throw new Error("File analysis was cancelled.");
-  const records = matrix.map((row) => row.map((cell) => String(cell ?? "")));
-  const table = summarizeTable(records);
-  const preview = records.slice(0, 9).map((row) => row.join(" | ")).join("\n");
-  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: bytes.byteLength, sheetCount: sheetNames.length, sheetNames, characterCount: preview.length, lineCount: preview ? preview.split(/\r?\n/).length : 0, preview, table, note: firstSheet ? `XLSX extracted successfully from sheet “${firstSheet}”.${sheetNames.length > 1 ? ` ${sheetNames.length - 1} additional sheet${sheetNames.length === 2 ? "" : "s"} detected.` : ""}` : "This XLSX workbook has no sheets." };
+  const firstTable = sheetTables[0];
+  const preview = firstTable?.preview || "";
+  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: bytes.byteLength, sheetCount: sheetNames.length, sheetNames, sheetTables, characterCount: preview.length, lineCount: preview ? preview.split(/\r?\n/).length : 0, preview, table: firstTable?.table, note: firstSheet ? `XLSX extracted ${Math.min(sheetNames.length, MAX_XLSX_SHEETS)} of ${sheetNames.length} sheets. Select a sheet to inspect its preview.${sheetNames.length > MAX_XLSX_SHEETS ? ` ${sheetNames.length - MAX_XLSX_SHEETS} additional sheets were skipped to keep analysis bounded.` : ""}` : "This XLSX workbook has no sheets." };
 }
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {

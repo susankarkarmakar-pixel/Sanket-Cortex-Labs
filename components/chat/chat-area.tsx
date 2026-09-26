@@ -20,7 +20,7 @@ interface ChatAreaProps {
   mode: AgentMode;
   onModeChange: (mode: AgentMode) => void;
   activeAgentTask: AgentTask | null;
-  agentExecution: Pick<AgentExecutionOutcome, "message" | "output" | "table" | "error" | "ok"> | null;
+  agentExecution: Pick<AgentExecutionOutcome, "message" | "output" | "table" | "sheetTables" | "error" | "ok"> | null;
   executionEvents: ExecutionEvent[];
   onCreateAgentTask: (goal: string, attachments: AgentAttachment[]) => void | Promise<void>;
   onRunAgentTask: () => void | Promise<void>;
