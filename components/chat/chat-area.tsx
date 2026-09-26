@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bot, Menu, MessageSquare, Settings, Sparkles } from "lucide-react";
-import { ModelOption, ModelSelector } from "@/components/sidebar/model-selector";
+import { ModelOption } from "@/components/sidebar/model-selector";
 import { AgentMode } from "@/lib/agent/mode";
 import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
 import { AgentExecutionOutcome } from "@/lib/agent/executor";
@@ -36,7 +36,6 @@ interface ChatAreaProps {
   onClearAgentTask: () => void;
   onOpenSidebar: () => void;
   selectedModel: ModelOption;
-  onSelectModel: (model: ModelOption) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   messages: any[];
   input: string;
@@ -50,7 +49,7 @@ interface ChatAreaProps {
   onPrompt: (prompt: string) => void;
 }
 
-export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onApproveAgentStep, onRejectAgentStep, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, onSelectModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
+export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, executionEvents, onCreateAgentTask, onRunAgentTask, onApproveAgentStep, onRejectAgentStep, onRollbackAgentTask, onPauseAgentTask, onResumeAgentTask, onRetryAgentTask, onCancelAgentTask, onClearAgentTask, onOpenSidebar, selectedModel, messages, input, onInputChange, onSend, isLoading, stop, error, onRetry, conversationTitle, onPrompt }: ChatAreaProps) {
   const [toastError, setToastError] = useState<string | null>(null);
   const customProvider = getCustomProviders().find((provider) => provider.id === selectedModel);
   const modelMetadata = MODELS_METADATA[selectedModel as keyof typeof MODELS_METADATA];
@@ -94,13 +93,9 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
           {conversationTitle && <span className="ml-2 hidden max-w-[260px] truncate text-sm text-text-muted md:inline">{conversationTitle}</span>}
         </div>
         <div className="flex items-center gap-2">
-          <nav className="hidden items-center gap-1 xl:flex" aria-label="Workspace navigation"><HeaderLink label="Projects" /><HeaderLink label="Knowledge" /><HeaderLink label="Tools" /></nav>
           <div role="group" aria-label="Workspace mode" className="flex items-center rounded-full border border-border-main/60 bg-surface p-1 shadow-sm">
             <ModeButton mode="chat" activeMode={mode} onSelect={onModeChange} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" />
             <ModeButton mode="agent" activeMode={mode} onSelect={onModeChange} icon={<Bot className="h-3.5 w-3.5" />} label="Agent" />
-          </div>
-          <div className="w-[150px] sm:w-[205px] [&>div>button]:rounded-full [&>div>button]:py-2 [&>div>button]:shadow-sm">
-            <ModelSelector selected={selectedModel} onSelect={onSelectModel} />
           </div>
           <button type="button" onClick={() => document.dispatchEvent(new CustomEvent("open-settings"))} aria-label="Open settings" className="rounded-full border border-border-main/60 bg-surface p-2.5 text-text-muted shadow-sm hover:text-text-main"><Settings className="h-4 w-4" /></button>
         </div>
@@ -122,10 +117,6 @@ export function ChatArea({ mode, onModeChange, activeAgentTask, agentExecution, 
       </div>
     </div>
   );
-}
-
-function HeaderLink({ label }: { label: string }) {
-  return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-text-muted hover:bg-black/5 hover:text-text-main">{label}</button>;
 }
 
 function ModeButton({ mode, activeMode, onSelect, icon, label }: { mode: AgentMode; activeMode: AgentMode; onSelect: (mode: AgentMode) => void; icon: React.ReactNode; label: string }) {
