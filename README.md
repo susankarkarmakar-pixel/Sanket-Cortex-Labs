@@ -13,17 +13,27 @@ Susan AI provides one streamlined chat interface for DeepSeek, Claude, Hugging F
 
 ## Demo & screenshot gallery
 
-The screenshot below shows the Susan AI workspace in action, including the model selector, conversation sidebar, chat composer, file attachment control, and conversation management actions.
+The current UI is organized as a privacy-focused workspace with a navigation sidebar, model selector, conversation area, responsive composer, and Agent Mode controls. The gallery below includes the latest local preview and the Agent Workspace visual target used to guide the ongoing UI implementation.
+
+### Chat workspace
 
 <div align="center">
-  <img src="docs/screenshots/susan-ai-workspace.webp" alt="Susan AI chat workspace showing the model selector, conversation sidebar, and message composer" width="100%" />
+  <img src="docs/screenshots/susan-ai-chat-workspace.webp" alt="Susan AI chat workspace with navigation sidebar, model selector, prompt cards, and message composer" width="100%" />
+</div>
+
+### Agent workspace visual target
+
+<div align="center">
+  <img src="docs/screenshots/susan-ai-agent-workspace-reference.png" alt="Susan AI Agent Workspace visual target with task plan, charts, execution activity, tools, and generated files" width="100%" />
 </div>
 
 ### Featured workflow elements
 
 - **Multi-model workspace:** Choose a supported provider and model from the selector at the top of the chat area.
 - **Conversation management:** Start a new chat, export or import conversations, and clear local history from the sidebar.
-- **Rich chat composer:** Send prompts, attach supported files, and receive streaming responses in one focused interface.
+- **Agent Workspace:** Set a high-level goal, review the generated plan, follow execution activity, and inspect live output.
+- **Persistent Agent composer:** Attach supported files, use quick actions such as Analyze File and Generate Report, and submit new goals from the bottom workspace bar.
+- **Generated Files:** Export PDF, DOCX, and XLSX reports from the Agent workspace and track their ready state in the right rail.
 - **Responsive experience:** Use the same workspace across desktop and mobile layouts.
 
 ## Features
