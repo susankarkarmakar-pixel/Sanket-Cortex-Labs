@@ -161,44 +161,31 @@ export function Sidebar({
                 No conversations yet
               </div>
             ) : (
-              <div className="flex flex-col gap-1">
-                {conversations.map((conv) => {
-                  const isActive = conv.id === currentConversationId;
-                  const meta = MODELS_METADATA[conv.model as keyof typeof MODELS_METADATA];
-                  const IconStr = meta?.icon || "🧠";
-                  const dateStr = new Date(conv.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-                  return (
-                    <button
-                      key={conv.id}
-                      onClick={() => {
-                        onLoadConversation(conv.id);
-                        if (window.innerWidth < 1024) onClose();
-                      }}
-                      className={cn(
-                        "group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors relative overflow-hidden",
-                        isActive ? "bg-sidebar-cocoa-soft text-white shadow-sm border border-white/10" : "text-white/65 hover:bg-white/10 hover:text-white border border-transparent"
-                      )}
-                    >
-                      <span className="shrink-0 text-[13px] opacity-80">{IconStr}</span>
-                      <div className="flex-1 min-w-0 flex flex-col">
-                        <span className="truncate font-medium leading-tight">{conv.title}</span>
-                        <span className="text-[10px] text-white/45 mt-1">{dateStr}</span>
-                      </div>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => handleDelete(e, conv.id)}
-                        className={cn(
-                          "absolute right-2 p-1.5 rounded-md text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-colors opacity-0 group-hover:opacity-100",
-                          isActive && "opacity-100 bg-sidebar-cocoa-soft" // Always show on active for touch devices
-                        )}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="space-y-4">
+                {groupConversations(conversations).map((group) => (
+                  <section key={group.label} aria-labelledby={`history-${group.label}`}>
+                    <h2 id={`history-${group.label}`} className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">{group.label}</h2>
+                    <div className="space-y-1">
+                      {group.items.map((conv) => {
+                        const isActive = conv.id === currentConversationId;
+                        const meta = MODELS_METADATA[conv.model as keyof typeof MODELS_METADATA];
+                        const IconStr = meta?.icon || "🧠";
+                        const date = new Date(conv.date);
+                        const dateStr = isSameDay(date, new Date()) ? date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                        return (
+                          <button key={conv.id} type="button" onClick={() => { onLoadConversation(conv.id); if (window.innerWidth < 1024) onClose(); }} className={cn("group relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl border px-2.5 py-2 text-left text-sm transition-colors", isActive ? "border-white/15 bg-sidebar-cocoa-soft text-white shadow-sm" : "border-transparent text-white/70 hover:border-white/10 hover:bg-white/10 hover:text-white")}>
+                            <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px]", isActive ? "bg-cream-highlight text-sidebar-cocoa" : "bg-white/10 text-white/80")}>{IconStr}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-medium leading-5">{conv.title || "New Conversation"}</span>
+                              <span className="mt-0.5 block truncate text-[10px] text-white/40">{meta?.name || conv.model} · {dateStr}</span>
+                            </span>
+                            <span role="button" tabIndex={0} aria-label={`Delete ${conv.title}`} onClick={(event) => handleDelete(event, conv.id)} className={cn("shrink-0 rounded-md p-1 text-white/30 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-200 group-hover:opacity-100", isActive && "opacity-100")}><Trash2 className="h-3.5 w-3.5" /></span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
               </div>
             )}
           </div>
@@ -249,4 +236,23 @@ function SidebarNavItem({ icon, label, active = false, onClick }: { icon: React.
 
 function PinnedAgent({ label }: { label: string }) {
   return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"><span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/10 text-cream-highlight">✦</span><span className="truncate">{label}</span></button>;
+}
+
+function isSameDay(first: Date, second: Date): boolean {
+  return first.getFullYear() === second.getFullYear() && first.getMonth() === second.getMonth() && first.getDate() === second.getDate();
+}
+
+function groupConversations(conversations: ConversationSummary[]): Array<{ label: string; items: ConversationSummary[] }> {
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const lastWeek = new Date(now);
+  lastWeek.setDate(now.getDate() - 7);
+  const groups = new Map<string, ConversationSummary[]>();
+  for (const conversation of conversations) {
+    const date = new Date(conversation.date);
+    const label = isSameDay(date, now) ? "Today" : isSameDay(date, yesterday) ? "Yesterday" : date >= lastWeek ? "Previous 7 days" : "Older";
+    groups.set(label, [...(groups.get(label) || []), conversation]);
+  }
+  return ["Today", "Yesterday", "Previous 7 days", "Older"].flatMap((label) => groups.has(label) ? [{ label, items: groups.get(label)! }] : []);
 }
