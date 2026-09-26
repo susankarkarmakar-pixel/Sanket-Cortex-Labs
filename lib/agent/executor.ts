@@ -62,6 +62,7 @@ function finalizeAfterTool(task: AgentTask): AgentTask {
 function formatFileOutput(result: FileAnalysisOutput): string {
   const summary = [`File: ${result.filename}`, `Characters: ${result.characterCount ?? "n/a"}`, `Lines: ${result.lineCount ?? "n/a"}`];
   if (typeof result.paragraphCount === "number") summary.push(`Paragraphs: ${result.paragraphCount}`);
+  if (typeof result.tableCount === "number") summary.push(`DOCX tables: ${result.tableCount}`);
   if (typeof result.sheetCount === "number") summary.push(`Sheets: ${result.sheetCount}${result.sheetNames?.length ? ` (${result.sheetNames.join(", ")})` : ""}`);
   if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`);
   if (result.table?.numericStats.length) summary.push(`Numeric columns: ${result.table.numericStats.map((stat) => `${stat.column} avg=${stat.average.toFixed(2)}`).join(", ")}`);

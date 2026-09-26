@@ -7,7 +7,7 @@ interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: stri
 export interface NumericColumnSummary { column: string; count: number; average: number; minimum: number; maximum: number; }
 export interface ChartPoint { label: string; value: number; }
 export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; numericStats: NumericColumnSummary[]; chartData?: { column: string; points: ChartPoint[] }; }
-export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; sheetCount?: number; sheetNames?: string[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
+export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; paragraphCount?: number; tableCount?: number; sheetCount?: number; sheetNames?: string[]; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
 const MAX_PREVIEW_LENGTH = 12_000;
@@ -22,7 +22,7 @@ const DOCUMENT_TYPES = new Map([
 export const fileAnalysisTool: ToolDefinition<FileAnalysisInput, FileAnalysisOutput> = {
   id: "file-analysis",
   name: "File Analysis",
-  description: "Inspect text files, extract bounded PDF/DOCX text, and analyze XLSX sheets with a preview table.",
+  description: "Inspect text files, extract bounded PDF/DOCX text and tables, and analyze XLSX sheets with a preview table.",
   permission: "read-only",
   inputSchema: { type: "object", properties: { filename: { type: "string", maxLength: 255 }, mediaType: { type: "string", maxLength: 100 }, dataUrl: { type: "string", maxLength: MAX_DATA_URL_LENGTH } }, required: ["filename", "mediaType", "dataUrl"], additionalProperties: false },
   async execute(input, context) {
@@ -70,8 +70,24 @@ async function analyzeDocx(input: FileAnalysisInput, signal: AbortSignal): Promi
   if (signal.aborted) throw new Error("File analysis was cancelled.");
   const html = (await mammoth.convertToHtml({ arrayBuffer })).value;
   const paragraphCount = rawText ? rawText.split(/\r?\n/).filter(Boolean).length : 0;
+  const tableRecords = parseDocxTable(html);
   const tableCount = (html.match(/<table\b/gi) || []).length;
-  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: arrayBuffer.byteLength, characterCount: rawText.length, lineCount: rawText ? rawText.split(/\r?\n/).length : 0, paragraphCount, preview: rawText.slice(0, MAX_PREVIEW_LENGTH), note: rawText ? `DOCX text extracted successfully${tableCount ? `; detected ${tableCount} table${tableCount === 1 ? "" : "s"}.` : "."}` : "This DOCX does not contain readable paragraph text." };
+  const table = tableRecords ? summarizeTable(tableRecords) : undefined;
+  return { filename: input.filename, mediaType: input.mediaType, sizeBytes: arrayBuffer.byteLength, characterCount: rawText.length, lineCount: rawText ? rawText.split(/\r?\n/).length : 0, paragraphCount, tableCount, table, preview: rawText.slice(0, MAX_PREVIEW_LENGTH), note: rawText ? `DOCX text extracted successfully${tableCount ? `; extracted the first of ${tableCount} table${tableCount === 1 ? "" : "s"} with ${table?.rowCount || 0} data row${table?.rowCount === 1 ? "" : "s"}.` : "."}` : tableCount ? `DOCX table extracted${tableCount > 1 ? `; ${tableCount - 1} additional tables detected.` : "."}` : "This DOCX does not contain readable paragraph text." };
+}
+
+function parseDocxTable(html: string): string[][] | undefined {
+  const firstTable = html.match(/<table\b[^>]*>[\s\S]*?<\/table>/i)?.[0];
+  if (!firstTable) return undefined;
+  const rows = [...firstTable.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((match) => [...match[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((cell) => decodeHtml(cell[1]))).filter((row) => row.length > 0);
+  return rows.length > 0 ? rows : undefined;
+}
+
+function decodeHtml(value: string): string {
+  const text = value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (typeof DOMParser === "undefined") return text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  const document = new DOMParser().parseFromString(text, "text/html");
+  return document.documentElement.textContent || "";
 }
 
 async function analyzeXlsx(input: FileAnalysisInput, signal: AbortSignal): Promise<FileAnalysisOutput> {
