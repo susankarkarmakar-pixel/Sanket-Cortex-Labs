@@ -142,7 +142,7 @@ export function Sidebar({
           </button>
 
           <nav className={cn("mb-5 space-y-1", collapsed && "hidden")} aria-label="Primary navigation">
-            <SidebarNavItem icon={<Home className="h-4 w-4" />} label="Home" />
+            <SidebarNavItem icon={<Home className="h-4 w-4" />} label="Home" onClick={() => window.location.reload()} />
             <SidebarNavItem icon={<MessageSquare className="h-4 w-4" />} label="Chat" />
             <SidebarNavItem icon={<Bot className="h-4 w-4" />} label="Agent Mode" active />
             <SidebarNavItem icon={<FolderKanban className="h-4 w-4" />} label="Projects" />
@@ -243,8 +243,8 @@ export function Sidebar({
   );
 }
 
-function SidebarNavItem({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
-  return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label }))} className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors", active ? "bg-sidebar-cocoa-soft text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}><span className={active ? "text-cream-highlight" : "text-white/65"}>{icon}</span><span>{label}</span>{active && <span className="ml-auto rounded-full bg-cream-highlight px-2 py-0.5 text-[9px] font-bold text-sidebar-cocoa">NEW</span>}</button>;
+function SidebarNavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }) {
+  return <button type="button" onClick={onClick || (() => window.dispatchEvent(new CustomEvent("workspace-placeholder", { detail: label })))} className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors", active ? "bg-sidebar-cocoa-soft text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}><span className={active ? "text-cream-highlight" : "text-white/65"}>{icon}</span><span>{label}</span>{active && <span className="ml-auto rounded-full bg-cream-highlight px-2 py-0.5 text-[9px] font-bold text-sidebar-cocoa">NEW</span>}</button>;
 }
 
 function PinnedAgent({ label }: { label: string }) {
