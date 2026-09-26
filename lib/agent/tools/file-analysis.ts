@@ -2,7 +2,8 @@ import { ToolDefinition } from "@/lib/agent/types";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 interface FileAnalysisInput { filename: string; mediaType: string; dataUrl: string; }
-interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; jsonValid?: boolean; preview?: string; note?: string; }
+export interface CsvTableSummary { columns: string[]; rows: string[][]; rowCount: number; missingValueCount: number; }
+export interface FileAnalysisOutput { filename: string; mediaType: string; sizeBytes: number; characterCount?: number; lineCount?: number; pageCount?: number; jsonValid?: boolean; preview?: string; note?: string; table?: CsvTableSummary; }
 
 const MAX_DATA_URL_LENGTH = 16_000_000;
 const MAX_PREVIEW_LENGTH = 12_000;
@@ -31,6 +32,7 @@ export const fileAnalysisTool: ToolDefinition<FileAnalysisInput, FileAnalysisOut
 
     const text = decodeDataUrl(input.dataUrl);
     const output: FileAnalysisOutput = { filename: input.filename, mediaType: input.mediaType, sizeBytes: new TextEncoder().encode(text).byteLength, characterCount: text.length, lineCount: text.length === 0 ? 0 : text.split(/\r?\n/).length, preview: text.slice(0, MAX_PREVIEW_LENGTH) };
+    if (input.mediaType === "text/csv") output.table = parseCsv(text);
     if (input.mediaType === "application/json") {
       try { JSON.parse(text); output.jsonValid = true; } catch { output.jsonValid = false; output.note = "The file could not be parsed as valid JSON."; }
     }
@@ -59,3 +61,29 @@ function validateInput(input: FileAnalysisInput): void { if (!input || typeof in
 function decodeDataUrl(dataUrl: string): string { return new TextDecoder().decode(decodeDataUrlBytes(dataUrl)); }
 function decodeDataUrlBytes(dataUrl: string): Uint8Array { const commaIndex = dataUrl.indexOf(","); if (commaIndex < 0) throw new Error("The file data URL is malformed."); const metadata = dataUrl.slice(0, commaIndex); const payload = dataUrl.slice(commaIndex + 1); if (metadata.endsWith(";base64")) { const binary = atob(payload); return Uint8Array.from(binary, (character) => character.charCodeAt(0)); } return new TextEncoder().encode(decodeURIComponent(payload)); }
 function estimateDataSize(dataUrl: string): number { return decodeDataUrlBytes(dataUrl).byteLength; }
+
+function parseCsv(text: string): CsvTableSummary {
+  const records = parseCsvRecords(text).filter((record) => record.some((cell) => cell.trim() !== ""));
+  const columns = (records.shift() || []).map((column, index) => column.trim() || `Column ${index + 1}`);
+  const rows = records.slice(0, 8).map((record) => columns.map((_, index) => record[index]?.trim() || ""));
+  const missingValueCount = records.reduce((count, record) => count + columns.filter((_, index) => !record[index]?.trim()).length, 0);
+  return { columns, rows, rowCount: records.length, missingValueCount };
+}
+
+function parseCsvRecords(text: string): string[][] {
+  const records: string[][] = [];
+  let record: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const next = text[index + 1];
+    if (character === '"' && quoted && next === '"') { cell += '"'; index += 1; continue; }
+    if (character === '"') { quoted = !quoted; continue; }
+    if (character === "," && !quoted) { record.push(cell); cell = ""; continue; }
+    if ((character === "\n" || character === "\r") && !quoted) { if (character === "\r" && next === "\n") index += 1; record.push(cell); records.push(record); record = []; cell = ""; continue; }
+    cell += character;
+  }
+  if (cell || record.length > 0) { record.push(cell); records.push(record); }
+  return records;
+}

@@ -5,9 +5,11 @@ import { useMemo, useState } from "react";
 import { AgentTask, ExecutionEvent } from "@/lib/agent/types";
 import { createDefaultToolRegistry } from "@/lib/agent/tools";
 import { ExecutionTimeline } from "@/components/agent/execution-timeline";
+import { DataPreviewTable } from "@/components/agent/data-preview-table";
+import { CsvTableSummary } from "@/lib/agent/tools/file-analysis";
 
 type PanelTab = "plan" | "tools" | "files";
-type ExecutionState = { message: string; output?: string; ok: boolean } | null;
+type ExecutionState = { message: string; output?: string; table?: CsvTableSummary; ok: boolean } | null;
 
 interface AgentSidePanelProps { activeTask: AgentTask | null; execution: ExecutionState; events: ExecutionEvent[]; }
 
@@ -28,7 +30,7 @@ function ToolsPanel({ tools, activeTask }: { tools: Array<{ id: string; name: st
 
 function FilesPanel({ activeTask }: { activeTask: AgentTask | null }) { return <div className="space-y-4"><div><h2 className="text-sm font-semibold text-text-main">Task files</h2><p className="mt-1 text-xs leading-5 text-text-muted">Files attached to an Agent task will appear here.</p></div>{activeTask?.attachments.length ? <div className="space-y-2">{activeTask.attachments.map((file) => <div key={file.id} className="rounded-xl border border-border-main/70 bg-surface p-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="min-w-0 truncate text-sm font-semibold text-text-main">{file.filename}</span></div><p className="mt-2 text-xs text-text-muted">{file.mediaType} · {formatBytes(file.sizeBytes)}</p></div>)}</div> : <EmptyPanel icon={<FileText className="h-5 w-5" />} title={activeTask ? "No files attached" : "No active task"} description={activeTask ? "Attach a supported file from the task composer." : "Create a task before attaching or analysing files."} />}</div>; }
 
-function ExecutionOutput({ execution }: { execution: Exclude<ExecutionState, null> }) { return <div className={`rounded-xl border p-3 ${execution.ok ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}><p className={`text-xs font-semibold ${execution.ok ? "text-emerald-800" : "text-red-700"}`}>{execution.message}</p>{execution.output && <pre className="mt-2 overflow-x-auto rounded-lg bg-sidebar-cocoa px-3 py-2 text-xs text-white">{execution.output}</pre>}</div>; }
+function ExecutionOutput({ execution }: { execution: Exclude<ExecutionState, null> }) { return <div className={`rounded-xl border p-3 ${execution.ok ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}><p className={`text-xs font-semibold ${execution.ok ? "text-emerald-800" : "text-red-700"}`}>{execution.message}</p>{execution.output && <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-sidebar-cocoa px-3 py-2 text-xs text-white">{execution.output}</pre>}{execution.table && <DataPreviewTable table={execution.table} />}</div>; }
 
 function StepIcon({ status }: { status: string }) { if (status === "completed") return <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />; if (status === "running") return <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-accent" />; return <Circle className="mt-0.5 h-4 w-4 shrink-0 text-text-muted/50" />; }
 function formatStepStatus(status: string): string { return status.replaceAll("_", " "); }

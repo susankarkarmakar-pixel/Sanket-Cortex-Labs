@@ -1,9 +1,10 @@
 import { calculatorTool } from "@/lib/agent/tools/calculator";
 import { fileAnalysisTool } from "@/lib/agent/tools/file-analysis";
+import { CsvTableSummary, FileAnalysisOutput } from "@/lib/agent/tools/file-analysis";
 import { AgentTask, ToolExecutionContext } from "@/lib/agent/types";
 import { transitionTask, updateStepStatus } from "@/lib/agent/agent-state";
 
-export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; ok: boolean; }
+export interface AgentExecutionOutcome { task: AgentTask; message: string; output?: string; table?: CsvTableSummary; ok: boolean; }
 
 export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecutionOutcome> {
   const step = task.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
@@ -26,7 +27,7 @@ export async function executeFirstToolStep(task: AgentTask): Promise<AgentExecut
     try {
       const result = await fileAnalysisTool.execute({ filename: attachment.filename, mediaType: attachment.mediaType, dataUrl: attachment.dataUrl }, context);
       const completedTask = updateStepStatus(runningTask, step.id, "completed");
-      return { task: finalizeAfterTool(completedTask), ok: true, message: "File Analysis completed successfully.", output: formatFileOutput(result) };
+      return { task: finalizeAfterTool(completedTask), ok: true, message: "File Analysis completed successfully.", output: formatFileOutput(result), table: result.table };
     } catch (error) {
       const failedTask = updateStepStatus(runningTask, step.id, "failed");
       return { task: { ...failedTask, status: "failed", updatedAt: new Date().toISOString() }, ok: false, message: error instanceof Error ? error.message : "File Analysis could not complete." };
@@ -54,8 +55,9 @@ function finalizeAfterTool(task: AgentTask): AgentTask {
   return { ...task, steps, status: hasPendingTool ? "running" : "completed", updatedAt: new Date().toISOString() };
 }
 
-function formatFileOutput(result: { filename: string; characterCount?: number; lineCount?: number; jsonValid?: boolean; preview?: string; note?: string }): string {
+function formatFileOutput(result: FileAnalysisOutput): string {
   const summary = [`File: ${result.filename}`, `Characters: ${result.characterCount ?? "n/a"}`, `Lines: ${result.lineCount ?? "n/a"}`];
+  if (result.table) summary.push(`Rows: ${result.table.rowCount}`, `Columns: ${result.table.columns.length}`, `Missing values: ${result.table.missingValueCount}`);
   if (typeof result.jsonValid === "boolean") summary.push(`JSON valid: ${result.jsonValid ? "yes" : "no"}`);
   if (result.note) summary.push(result.note);
   if (result.preview) summary.push(`Preview:\n${result.preview}`);

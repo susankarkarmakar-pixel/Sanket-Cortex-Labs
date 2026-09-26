@@ -19,7 +19,7 @@ import { useAgentMode } from "@/hooks/use-agent-mode";
 import { AgentAttachment, AgentTask, ExecutionEvent } from "@/lib/agent/types";
 import { createAgentTask, transitionTask, updateStepStatus } from "@/lib/agent/agent-state";
 import { planAgentTask } from "@/lib/agent/planner";
-import { executeFirstToolStep } from "@/lib/agent/executor";
+import { AgentExecutionOutcome, executeFirstToolStep } from "@/lib/agent/executor";
 import { useAgentTasks } from "@/hooks/use-agent-tasks";
 
 export default function Home() {
@@ -32,7 +32,7 @@ export default function Home() {
   const { settings } = useAppSettings();
   const { mode, setMode } = useAgentMode();
   const [activeAgentTask, setActiveAgentTask] = useState<AgentTask | null>(null);
-  const [agentExecution, setAgentExecution] = useState<{ message: string; output?: string; ok: boolean } | null>(null);
+  const [agentExecution, setAgentExecution] = useState<Pick<AgentExecutionOutcome, "message" | "output" | "table" | "ok"> | null>(null);
   const [executionEvents, setExecutionEvents] = useState<ExecutionEvent[]>([]);
   const { records, ready: tasksReady, save: saveAgentTask, remove: removeAgentTask } = useAgentTasks();
   const restoredTask = useRef(false);
@@ -109,7 +109,7 @@ export default function Home() {
     setExecutionEvents((events) => [...events, createExecutionEvent(activeAgentTask.id, "tool-started", `Started ${step.title}`, step.id, step.toolId)]);
     const outcome = await executeFirstToolStep(activeAgentTask);
     setActiveAgentTask(outcome.task);
-    setAgentExecution({ message: outcome.message, output: outcome.output, ok: outcome.ok });
+    setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, ok: outcome.ok });
     setExecutionEvents((events) => {
       const nextEvents = [...events, createExecutionEvent(activeAgentTask.id, outcome.ok ? "tool-completed" : "tool-failed", outcome.message, step.id, step.toolId)];
       if (outcome.ok && outcome.task.status === "completed") nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-completed", "Task completed"));

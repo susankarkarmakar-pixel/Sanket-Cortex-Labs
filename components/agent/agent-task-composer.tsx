@@ -3,10 +3,12 @@
 import { ClipboardList, Paperclip, Pause, Play, Plus, Rocket, RotateCcw, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { AgentAttachment, AgentTask } from "@/lib/agent/types";
+import { CsvTableSummary } from "@/lib/agent/tools/file-analysis";
+import { DataPreviewTable } from "@/components/agent/data-preview-table";
 
 interface AgentTaskComposerProps {
   activeTask: AgentTask | null;
-  execution: { message: string; output?: string; ok: boolean } | null;
+  execution: { message: string; output?: string; table?: CsvTableSummary; ok: boolean } | null;
   onCreateTask: (goal: string, attachments: AgentAttachment[]) => void | Promise<void>;
   onRunTask: () => void | Promise<void>;
   onPauseTask: () => void;
@@ -70,7 +72,7 @@ export function AgentTaskComposer({ activeTask, execution, onCreateTask, onRunTa
             <p className="mt-2 text-sm leading-6 text-text-main">{activeTask.goal}</p>
             {activeTask.attachments.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{activeTask.attachments.map((file) => <span key={file.id} className="flex items-center gap-1.5 rounded-lg bg-surface px-2 py-1 text-xs text-text-main"><Paperclip className="h-3 w-3 text-accent" />{file.filename}</span>)}</div>}
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-text-muted"><span className="rounded-full bg-cream-highlight px-2.5 py-1 font-medium text-accent">Status: {formatStatus(activeTask.status)}</span><span>Task ID: {activeTask.id.slice(0, 8)}</span></div>
-            {execution && <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${execution.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-700"}`}><p className="font-semibold">{execution.message}</p>{execution.output && <code className="mt-1 block font-mono">{execution.output}</code>}</div>}
+            {execution && <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${execution.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-700"}`}><p className="font-semibold">{execution.message}</p>{execution.output && <code className="mt-1 block whitespace-pre-wrap font-mono">{execution.output}</code>}{execution.table && <DataPreviewTable table={execution.table} />}</div>}
             <div className="mt-4 flex flex-wrap gap-2">
               {activeTask.steps.some((step) => step.toolId && step.status === "pending") && activeTask.status !== "paused" && <button type="button" onClick={() => void onRunTask()} className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"><Rocket className="h-4 w-4" />Run next step</button>}
               {activeTask.status === "paused" && <button type="button" onClick={onResumeTask} className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"><Play className="h-4 w-4" />Resume</button>}
