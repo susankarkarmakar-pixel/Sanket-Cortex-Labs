@@ -106,20 +106,26 @@ export default function Home() {
   };
   const handleRunAgentTask = async () => {
     if (!activeAgentTask) return;
-    const step = activeAgentTask.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
-    if (!step?.toolId) return;
-    if (!safeTaskSnapshot.current || safeTaskSnapshot.current.id !== activeAgentTask.id) safeTaskSnapshot.current = structuredClone(activeAgentTask);
-    setExecutionEvents((events) => [...events, createExecutionEvent(activeAgentTask.id, "tool-started", `Started ${step.title}`, step.id, step.toolId)]);
-    const outcome = await executeFirstToolStep(activeAgentTask);
-    setActiveAgentTask(outcome.task);
-    setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, error: outcome.error, ok: outcome.ok });
-    if (outcome.ok) safeTaskSnapshot.current = structuredClone(outcome.task);
-    setExecutionEvents((events) => {
-      const nextEvents = [...events, createExecutionEvent(activeAgentTask.id, outcome.ok ? "tool-completed" : "tool-failed", outcome.message, step.id, step.toolId)];
-      if (outcome.ok && outcome.task.status === "completed") nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-completed", "Task completed"));
-      if (!outcome.ok) nextEvents.push(createExecutionEvent(activeAgentTask.id, "task-failed", "Task failed"));
-      return nextEvents;
-    });
+    let currentTask = activeAgentTask;
+    if (!safeTaskSnapshot.current || safeTaskSnapshot.current.id !== currentTask.id) safeTaskSnapshot.current = structuredClone(currentTask);
+    while (true) {
+      const step = currentTask.steps.find((candidate) => candidate.status === "pending" && candidate.toolId);
+      if (!step?.toolId) break;
+      setExecutionEvents((events) => [...events, createExecutionEvent(currentTask.id, "tool-started", `Started ${step.title}`, step.id, step.toolId)]);
+      const outcome = await executeFirstToolStep(currentTask);
+      currentTask = outcome.task;
+      setActiveAgentTask(outcome.task);
+      setAgentExecution({ message: outcome.message, output: outcome.output, table: outcome.table, error: outcome.error, ok: outcome.ok });
+      if (outcome.ok) safeTaskSnapshot.current = structuredClone(outcome.task);
+      const hasNextTool = outcome.task.steps.some((candidate) => candidate.status === "pending" && candidate.toolId);
+      setExecutionEvents((events) => {
+        const nextEvents = [...events, createExecutionEvent(currentTask.id, outcome.ok ? "tool-completed" : "tool-failed", outcome.message, step.id, step.toolId)];
+        if (outcome.ok && !hasNextTool) nextEvents.push(createExecutionEvent(currentTask.id, "task-completed", "Task completed"));
+        if (!outcome.ok) nextEvents.push(createExecutionEvent(currentTask.id, "task-failed", "Task failed"));
+        return nextEvents;
+      });
+      if (!outcome.ok || !hasNextTool) break;
+    }
   };
   const handleRollbackAgentTask = () => {
     if (!activeAgentTask || activeAgentTask.status !== "failed" || !safeTaskSnapshot.current) return;
